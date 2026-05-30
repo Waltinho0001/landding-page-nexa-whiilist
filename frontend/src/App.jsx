@@ -46,6 +46,8 @@ function NexaLogo({ className = 'w-8 h-8' }) {
 export default function App() {
   const [registeredLead, setRegisteredLead] = useState(null);
   const [queuePosition, setQueuePosition] = useState(null);
+  const [tier, setTier] = useState(null);
+  const [benefits, setBenefits] = useState(null);
   const [surveyCompleted, setSurveyCompleted] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
@@ -61,6 +63,10 @@ export default function App() {
       if (savedPosition) {
         setQueuePosition(parseInt(savedPosition, 10));
       }
+      const savedTier = localStorage.getItem('nexa_tier');
+      const savedBenefits = localStorage.getItem('nexa_benefits');
+      if (savedTier) setTier(savedTier);
+      if (savedBenefits) setBenefits(JSON.parse(savedBenefits));
       if (savedSurvey === 'true') {
         setSurveyCompleted(true);
       }
@@ -76,12 +82,16 @@ export default function App() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleLeadSuccess = (lead, position) => {
+  const handleLeadSuccess = (lead, position, newTier, newBenefits) => {
     setRegisteredLead(lead);
     setQueuePosition(position);
+    if (newTier) setTier(newTier);
+    if (newBenefits) setBenefits(newBenefits);
     try {
       localStorage.setItem('nexa_lead', JSON.stringify(lead));
       localStorage.setItem('nexa_queue_pos', position.toString());
+      if (newTier) localStorage.setItem('nexa_tier', newTier);
+      if (newBenefits) localStorage.setItem('nexa_benefits', JSON.stringify(newBenefits));
     } catch (e) {
       console.warn('Storage writing failed', e);
     }
@@ -260,7 +270,7 @@ export default function App() {
                   Preenchimento simplificado. Sem compromisso financeiro.
                 </span>
               </div>
-              <LeadForm onSuccess={handleLeadSuccess} savedLead={registeredLead} queuePosition={queuePosition} />
+              <LeadForm onSuccess={handleLeadSuccess} savedLead={registeredLead} queuePosition={queuePosition} tier={tier} benefits={benefits} />
             </div>
             <div id="validation-section-container" className="lg:col-span-6 space-y-4 scroll-mt-24">
               <div>

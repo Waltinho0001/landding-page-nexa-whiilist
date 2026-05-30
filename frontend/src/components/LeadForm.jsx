@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react';
 import { Check, AlertCircle, ShieldCheck, Mail, User, Phone, Share2, Briefcase, Loader2, Send } from 'lucide-react';
 import { emailService } from '../services/emailService.js';
 
-export default function LeadForm({ onSuccess, savedLead, queuePosition }) {
+export default function LeadForm({ onSuccess, savedLead, queuePosition, tier, benefits }) {
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -112,12 +112,12 @@ export default function LeadForm({ onSuccess, savedLead, queuePosition }) {
         phone: formData.phone.trim(),
         socialMedia: formData.socialMedia,
         profession: formData.profession,
-        message: '',
+        consent: formData.consent,
       });
 
       if (result.success) {
-        const pos = queuePosition || Math.floor(Math.random() * 300) + 501;
-        onSuccess(formData, pos);
+        const pos = result.position || queuePosition;
+        onSuccess(formData, pos, result.tier, result.benefits);
       } else {
         setSubmitError(result.message || 'Ocorreu um erro ao enviar. Tente novamente.');
       }

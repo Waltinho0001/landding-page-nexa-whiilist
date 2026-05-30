@@ -6,3 +6,9 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Prisma generated
+prisma/generated/
+
+# Vercel
+.vercel/

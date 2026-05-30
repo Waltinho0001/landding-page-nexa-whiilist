@@ -1,0 +1,37 @@
+// prisma/schema.prisma
+// Nexa Beta – Modelagem do banco de dados PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model BetaUser {
+  id              String   @id @default(cuid())
+  fullName        String
+  email           String   @unique
+  phone           String?
+  socialMedia     String?
+  profession      String?
+  consent         Boolean  @default(false)
+
+  // Fila e recompensas
+  queuePosition   Int      @unique @default(autoincrement())
+  tier            String   @default("OBSERVER")
+  premiumMonths   Int      @default(6)
+  lifetimeDiscount Float   @default(0.30)
+
+  // Auditoria e consentimento LGPD
+  createdAt       DateTime @default(now())
+  consentVersion  String   @default("1.0")
+  consentDate     DateTime @default(now())
+
+  @@index([queuePosition])
+  @@index([tier])
+  @@index([createdAt])
+  @@map("beta_users")
+}

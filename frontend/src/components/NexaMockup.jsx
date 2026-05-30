@@ -34,11 +34,13 @@ export default function NexaApp() {
   const [activeTab, setActiveTab] = useState('input');
   const [typedText, setTypedText] = useState('');
   const [extractedTask, setExtractedTask] = useState({ title: '', dueDate: 'Hoje', time: 'Livre', priority: 'Média', category: 'Pessoal' });
+
   const [tasks, setTasks] = useState([
     { id: '1', title: 'Gravar vídeo do pitch', dueDate: 'Hoje', time: '11:30', priority: 'Alta', completed: false, category: 'Trabalho', createdAt: Date.now() - 3600000 },
     { id: '2', title: 'Responder e-mails pendentes', dueDate: 'Hoje', time: '16:00', priority: 'Média', completed: false, category: 'Trabalho', createdAt: Date.now() - 7200000 },
     { id: '3', title: 'Revisão semanal', dueDate: 'Amanhã', time: '09:00', priority: 'Baixa', completed: false, category: 'Pessoal', createdAt: Date.now() - 10800000 },
   ]);
+  
   const [filter, setFilter] = useState('all');
   const [timerDuration, setTimerDuration] = useState(25 * 60);
   const [timerPresetIndex, setTimerPresetIndex] = useState(0);
@@ -290,7 +292,7 @@ export default function NexaApp() {
         .animate-glow-pulse { animation: glow-pulse 2s ease-in-out infinite; }
         .animate-toast-in { animation: toast-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         .animate-toast-out { animation: toast-out 0.3s ease-in forwards; }
-        .minimal-scrollbar::-webkit-scrollbar { width: 3px; }
+        .minimal-scrollbar::-webkit-scrollbar { width: 0.25px; }
         .minimal-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .minimal-scrollbar::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.3); border-radius: 9999px; transition: background 0.2s; }
         .minimal-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.5); }
@@ -601,6 +603,7 @@ export default function NexaApp() {
                                 >
                                   {task.completed && <Check className="w-3 h-3 stroke-[3] text-white" />}
                                 </button>
+
                                 <div className="flex-1 min-w-0">
                                   {isEditing ? (
                                     <input
@@ -616,6 +619,7 @@ export default function NexaApp() {
                                       {task.title}
                                     </p>
                                   )}
+
                                   <div className="flex items-center gap-2 mt-1">
                                     <span className="text-[10px] text-slate-400 flex items-center gap-1">
                                       <Clock className="w-2.5 h-2.5" />
@@ -629,6 +633,7 @@ export default function NexaApp() {
                                     </span>
                                   </div>
                                 </div>
+
                                 <div className="flex gap-1">
                                   {!task.completed && (
                                     <button
@@ -639,6 +644,7 @@ export default function NexaApp() {
                                       <Edit2 className="w-2.5 h-2.5 text-slate-400" />
                                     </button>
                                   )}
+                                  
                                   <button
                                     type="button"
                                     onClick={(e) => deleteTask(task.id, e)}
@@ -660,42 +666,46 @@ export default function NexaApp() {
                 <div className="flex flex-col h-full animate-slide-up">
                   {currentFocusTask ? (
                     <>
-                      <div className="relative rounded-3xl overflow-hidden shadow-sm">
-                        <div className="absolute inset-0 bg-gradient-to-br from-[#8958f3] to-[#6d3ad4]" />
-                        <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 30% 0%, rgba(255,255,255,0.3) 0%, transparent 50%)' }} />
-                        <div className="relative p-5">
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm rounded-full px-2.5 py-1">
-                              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                              <span className="text-[9px] text-white font-bold uppercase tracking-wider">Em foco agora</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <span className={`px-2 py-1 rounded-lg text-[9px] font-bold bg-white/15 text-white`}>
-                                {currentFocusTask.priority}
-                              </span>
-                              <span className={`px-2 py-1 rounded-lg text-[9px] font-bold bg-white/15 text-white`}>
-                                {currentFocusTask.category}
-                              </span>
-                            </div>
-                          </div>
-                          <h3 className="font-bold text-[17px] text-white leading-tight">{currentFocusTask.title}</h3>
-                          <p className="text-[12px] text-white/70 mt-2 flex items-center gap-2">
-                            <span className="bg-white/10 rounded-md px-2 py-0.5 flex items-center gap-1">
-                              <Clock className="w-3 h-3" />
-                              {currentFocusTask.dueDate}
-                            </span>
-                            {currentFocusTask.time && currentFocusTask.time !== 'Livre' && (
-                              <span>{currentFocusTask.time}</span>
-                            )}
-                          </p>
+                      {/* Enhanced Task Card with gradient left border */}
+                      <div className="relative rounded-2xl bg-white p-4 border border-slate-100 shadow-sm overflow-hidden">
+                        <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-[#8958f3] to-[#6d3ad4]" />
+                        <div className="flex items-center justify-between mb-2 pl-1">
+                          <span className="text-[7.5px] uppercase tracking-[0.25em] text-[#8958f3] font-extrabold">
+                            Executar Agora
+                          </span>
+                          <span className={`text-[8px] font-bold px-2 py-0.5 rounded-full border ${
+                            currentFocusTask.priority === 'Alta' 
+                              ? 'bg-rose-50 text-rose-500 border-rose-100' 
+                              : currentFocusTask.priority === 'Média'
+                              ? 'bg-amber-50 text-amber-500 border-amber-100'
+                              : 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                          }`}>
+                            {currentFocusTask.priority}
+                          </span>
                         </div>
+                        <h3 className="font-bold text-sm text-slate-900 leading-tight line-clamp-2 pl-1">
+                          {currentFocusTask.title}
+                        </h3>
+                        <p className="text-[9px] text-slate-400 mt-1 pl-1 font-medium flex items-center gap-2">
+                          <Clock className="w-3 h-3" />
+                          <span>Prazo: {currentFocusTask.dueDate}</span>
+                          {currentFocusTask.time && currentFocusTask.time !== 'Livre' && (
+                            <span>às {currentFocusTask.time}</span>
+                          )}
+                        </p>
                       </div>
 
-                      <div className="flex flex-col items-center gap-5 mt-6">
+                      {/* Improved Timer Section */}
+                      <div className="flex flex-col items-center justify-center flex-1 gap-4 py-4">
                         <div className="relative animate-timer-glow">
-                          <div className="absolute inset-0 w-44 h-44 rounded-full bg-gradient-to-br from-[#8958f3]/5 to-[#a78bfa]/5" />
-                          <svg className="w-44 h-44 relative z-10" viewBox="0 0 160 160" style={{ transform: 'rotate(-90deg)' }}>
-                            <circle cx="80" cy="80" r="70" stroke="#f1f5f9" strokeWidth="8" fill="none" />
+                          <div className="absolute inset-2 w-40 h-40 bg-gradient-to-br from-[#8958f3]/8 to-[#a78bfa]/5 rounded-full blur-md" />
+                          
+                          <svg className="w-40 h-40 relative z-10" viewBox="0 0 160 160" style={{ transform: 'rotate(-90deg)' }}>
+                            {/* Background circle */}
+                            <circle cx="80" cy="80" r="70" className="stroke-slate-100" strokeWidth="8" fill="none" />
+                            <circle cx="80" cy="80" r="64" className="stroke-slate-200/30" strokeWidth="1" fill="none" />
+                            
+                            {/* Progress circle */}
                             <circle
                               cx="80"
                               cy="80"
@@ -715,14 +725,19 @@ export default function NexaApp() {
                               </linearGradient>
                             </defs>
                           </svg>
+                          
+                          {/* Timer Display */}
                           <div className="absolute inset-0 flex flex-col items-center justify-center z-20">
-                            <span className="font-mono text-[32px] font-bold text-slate-900 tracking-tight">{formatMinSec(timerDuration)}</span>
-                            <span className="text-[9px] uppercase tracking-[0.2em] text-slate-400 font-semibold mt-1">
+                            <span className="font-mono text-3xl font-black text-slate-900 tracking-tight leading-none">
+                              {formatMinSec(timerDuration)}
+                            </span>
+                            <span className="text-[7px] uppercase tracking-[0.25em] text-slate-400 font-bold mt-2 scale-90 origin-top">
                               {isTimerRunning ? 'Concentrado' : 'Pomodoro'}
                             </span>
                           </div>
                         </div>
 
+                        {/* Preset Buttons */}
                         <div className="flex items-center gap-2">
                           {TIMER_PRESETS.map((preset, idx) => {
                             const Icon = preset.icon;
@@ -731,7 +746,11 @@ export default function NexaApp() {
                                 key={idx}
                                 type="button"
                                 onClick={() => handleTimerPresetChange(idx)}
-                                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-bold transition-all cursor-pointer ${timerPresetIndex === idx ? 'bg-[#8958f3] text-white shadow-lg shadow-[#8958f3]/25' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
+                                className={`flex items-center gap-1 px-3 py-2 rounded-lg text-[10px] font-bold transition-all duration-200 cursor-pointer ${
+                                  timerPresetIndex === idx 
+                                    ? 'bg-[#8958f3] text-white shadow-lg shadow-[#8958f3]/25' 
+                                    : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                                }`}
                               >
                                 <Icon className="w-3.5 h-3.5" />
                                 {preset.label}
@@ -740,26 +759,33 @@ export default function NexaApp() {
                           })}
                         </div>
 
-                        <div className="flex items-center gap-4">
+                        {/* Timer Controls */}
+                        <div className="flex items-center gap-3">
                           <button
                             type="button"
                             onClick={() => {
                               setIsTimerRunning(false);
                               setTimerDuration(TIMER_PRESETS[timerPresetIndex].duration);
                             }}
-                            className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-500 flex items-center justify-center hover:bg-slate-200 hover:text-slate-700 transition-all active:scale-95 border border-slate-200 cursor-pointer"
+                            className="w-10 h-10 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center hover:bg-slate-200 hover:text-slate-700 transition-colors active:scale-95 cursor-pointer"
                             title="Reiniciar"
                           >
-                            <RefreshCw className="w-5 h-5" />
+                            <RefreshCw className="w-4 h-4" />
                           </button>
+                          
                           <button
                             type="button"
                             onClick={() => setIsTimerRunning((prev) => !prev)}
-                            className={`w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg transition-all active:scale-95 cursor-pointer ${isTimerRunning ? 'bg-gradient-to-br from-rose-500 to-rose-600 text-white shadow-rose-500/25' : 'bg-gradient-to-br from-[#6d3ad4] to-[#8958f3] text-white shadow-[#8958f3]/25'}`}
+                            className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-95 cursor-pointer ${
+                              isTimerRunning 
+                                ? 'bg-gradient-to-br from-rose-500 to-rose-600 text-white shadow-rose-500/30' 
+                                : 'bg-gradient-to-br from-[#6d3ad4] to-[#8958f3] text-white shadow-[#8958f3]/30 scale-105'
+                            }`}
                             title={isTimerRunning ? 'Pausar' : 'Iniciar'}
                           >
-                            {isTimerRunning ? <Pause className="w-7 h-7" /> : <Play className="w-7 h-7 ml-0.5" />}
+                            {isTimerRunning ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6 ml-1 fill-current" />}
                           </button>
+                          
                           <button
                             type="button"
                             onClick={() => {
@@ -767,30 +793,31 @@ export default function NexaApp() {
                               setTimerDuration(5 * 60);
                               showToast('☕ Pausa de 5 minutos', 'info');
                             }}
-                            className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-500 flex items-center justify-center hover:bg-slate-200 hover:text-slate-700 transition-all active:scale-95 border border-slate-200 cursor-pointer"
+                            className="w-10 h-10 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center hover:bg-slate-200 hover:text-slate-700 transition-colors active:scale-95 cursor-pointer"
                             title="Pausa curta"
                           >
-                            <AlertCircle className="w-5 h-5" />
+                            <AlertCircle className="w-4 h-4" />
                           </button>
                         </div>
                       </div>
 
+                      {/* Action Buttons */}
                       <div className="mt-auto space-y-2">
                         <button
                           type="button"
                           onClick={() => toggleTaskCompletion(currentFocusTask.id)}
-                          className="w-full rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white py-4 font-bold shadow-lg shadow-emerald-500/20 hover:shadow-xl hover:shadow-emerald-500/30 transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
+                          className="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white py-3 font-bold text-sm shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
                         >
-                          <Check className="w-5 h-5 stroke-[2.5]" />
-                          Concluir Tarefa
+                          <Check className="w-4 h-4 stroke-[3]" />
+                          Concluir para Recompensa
                         </button>
                         <button
                           type="button"
                           onClick={() => setActiveTab('input')}
-                          className="w-full rounded-2xl bg-slate-100 text-slate-600 py-3 font-semibold hover:bg-slate-200 transition-all active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
+                          className="w-full rounded-xl bg-slate-100 text-slate-600 py-2.5 font-semibold text-sm hover:bg-slate-200 transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
                         >
                           <ArrowRight className="w-4 h-4" />
-                          Ver todas as tarefas
+                          Todas as tarefas
                         </button>
                       </div>
                     </>
