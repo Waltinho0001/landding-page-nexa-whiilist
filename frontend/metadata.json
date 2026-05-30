@@ -1,0 +1,6 @@
+{
+  "name": "Nexa Beta Waitlist",
+  "description": "Landing page de captação de Beta-testers para o Nexa App, o gerenciador de tarefas inteligente focado na ação.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
