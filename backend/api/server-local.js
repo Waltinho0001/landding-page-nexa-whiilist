@@ -26,6 +26,11 @@ import registerHandler from './register.js';
 import statusHandler from './status.js';
 import sendEmailHandler from './send-email.js';
 
+// Admin
+import adminStatsHandler from './admin/stats.js';
+import adminListHandler from './admin/list.js';
+import adminExportHandler from './admin/export.js';
+
 console.log('═══════════════════════════════════════');
 console.log('  🚀 Nexa API — Servidor de Dev Local  ');
 console.log('═══════════════════════════════════════');
@@ -65,6 +70,11 @@ app.post('/api/register', vercelAdapter(registerHandler));
 app.get('/api/status', vercelAdapter(statusHandler));
 app.post('/api/send-email', vercelAdapter(sendEmailHandler));
 app.options('/api/*', (req, res) => res.status(204).end());
+
+// Adimin
+app.get('/api/admin/stats', vercelAdapter(adminStatsHandler));
+app.get('/api/admin/list', vercelAdapter(adminListHandler));
+app.get('/api/admin/export', vercelAdapter(adminExportHandler));
 
 // Health check
 app.get('/api/health', (req, res) => {
