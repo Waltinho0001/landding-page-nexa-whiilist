@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Check, ShieldCheck, ArrowUp, ArrowRight, Users, Clock, HelpCircle } from 'lucide-react';
+import { Check, ShieldCheck, ArrowUp, ArrowRight, ArrowUpRight, Users, Clock, HelpCircle } from 'lucide-react';
 import LeadForm from './components/LeadForm.jsx';
 import NexaMockup from './components/NexaMockup.jsx';
 import IdeaValidation from './components/IdeaValidation.jsx';
@@ -198,12 +198,15 @@ export default function App() {
                   Garantir Acesso Antecipado
                   <ArrowRight className="w-4 h-4" />
                 </button>
-                <button
-                  onClick={() => scrollToSection('validation-section-container')}
-                  className="w-full sm:w-auto bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold py-3.5 px-6 rounded-xl border border-slate-200 hover:border-slate-300 transition-colors flex items-center justify-center gap-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-slate-200"
+                <a
+                  href="https://docs.google.com/forms/d/e/1FAIpQLSd5wr-Gme_Jxih9MGAbh_HycSKYID_0cfDXA1JJVXI08hl52w/viewform?usp=dialog"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group w-full sm:w-auto inline-flex items-center justify-center bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold py-3.5 px-6 rounded-xl border border-slate-200 hover:border-slate-300 transition-all transform hover:-translate-y-0.5 active:scale-95 shadow-xs cursor-pointer focus:outline-none focus:ring-2 focus:ring-slate-200"
                 >
                   Responder Questionário Secundário
-                </button>
+                  <ArrowUpRight className="w-4 h-4 ml-1.5 text-slate-500 opacity-80 transition-colors group-hover:text-slate-800" />
+                </a>
               </div>
             </div>
             <div className="lg:col-span-5 flex justify-center">
