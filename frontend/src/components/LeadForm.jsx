@@ -296,7 +296,7 @@ export default function LeadForm({ onSuccess, savedLead, queuePosition, tier, be
               placeholder="Ex: Amanda Silva"
               disabled={isSubmitting}
               maxLength="120"
-              className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-sm transition-all focus:outline-none focus:bg-white focus:ring-2 disabled:opacity-50 ${
+              className={`w-full min-h-[44px] px-4 py-3 bg-slate-50 border rounded-xl text-base transition-all focus:outline-none focus:bg-white focus:ring-2 disabled:opacity-50 ${
                 errors.fullName
                   ? 'border-red-400 focus:ring-red-100 placeholder:text-red-300'
                   : 'border-slate-200 focus:ring-nexa-blue/10 focus:border-nexa-blue'
@@ -330,7 +330,7 @@ export default function LeadForm({ onSuccess, savedLead, queuePosition, tier, be
               placeholder="Ex: amanda@email.com"
               disabled={isSubmitting}
               maxLength="254"
-              className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-sm transition-all focus:outline-none focus:bg-white focus:ring-2 disabled:opacity-50 ${
+              className={`w-full min-h-[44px] px-4 py-3 bg-slate-50 border rounded-xl text-base transition-all focus:outline-none focus:bg-white focus:ring-2 disabled:opacity-50 ${
                 errors.email
                   ? 'border-red-400 focus:ring-red-100 placeholder:text-red-300'
                   : 'border-slate-200 focus:ring-nexa-blue/10 focus:border-nexa-blue'
@@ -363,7 +363,7 @@ export default function LeadForm({ onSuccess, savedLead, queuePosition, tier, be
             placeholder="(99) 99999-9999"
             disabled={isSubmitting}
             maxLength="15"
-            className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-sm transition-all focus:outline-none focus:bg-white focus:ring-2 disabled:opacity-50 ${
+            className={`w-full min-h-[44px] px-4 py-3 bg-slate-50 border rounded-xl text-base transition-all focus:outline-none focus:bg-white focus:ring-2 disabled:opacity-50 ${
               errors.phone
                 ? 'border-red-400 focus:ring-red-100 placeholder:text-red-300'
                 : 'border-slate-200 focus:ring-nexa-blue/10 focus:border-nexa-blue'
@@ -390,7 +390,7 @@ export default function LeadForm({ onSuccess, savedLead, queuePosition, tier, be
             disabled={isSubmitting}
             aria-invalid={!!errors.socialMedia}
             aria-describedby={errors.socialMedia ? 'socialMedia-error' : undefined}
-            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-nexa-blue/10 focus:border-nexa-blue disabled:opacity-50"
+            className="w-full min-h-[44px] px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-nexa-blue/10 focus:border-nexa-blue disabled:opacity-50"
           >
             <option value="">Selecione</option>
             <option value="instagram">Instagram</option>
@@ -419,7 +419,7 @@ export default function LeadForm({ onSuccess, savedLead, queuePosition, tier, be
             disabled={isSubmitting}
             aria-invalid={!!errors.profession}
             aria-describedby={errors.profession ? 'profession-error' : undefined}
-            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-nexa-blue/10 focus:border-nexa-blue disabled:opacity-50"
+            className="w-full min-h-[44px] px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-nexa-blue/10 focus:border-nexa-blue disabled:opacity-50"
           >
             <option value="">Selecione</option>
             <option value="estudante">Estudante</option>
@@ -435,8 +435,8 @@ export default function LeadForm({ onSuccess, savedLead, queuePosition, tier, be
           )}
         </div>
 
-        <div className="flex items-start gap-3">
-          <label className="relative flex items-start gap-3 cursor-pointer">
+        <div className="space-y-1">
+          <label className="relative flex items-start gap-3 cursor-pointer min-h-[44px] py-1">
             <input
               type="checkbox"
               name="consent"
@@ -444,14 +444,14 @@ export default function LeadForm({ onSuccess, savedLead, queuePosition, tier, be
               onChange={handleChange}
               disabled={isSubmitting}
               aria-invalid={!!errors.consent}
-              className="mt-1 accent-nexa-blue cursor-pointer"
+              className="mt-1 w-5 h-5 shrink-0 accent-nexa-blue cursor-pointer focus:outline-none focus:ring-2 focus:ring-nexa-blue/30 rounded"
             />
-            <span className="text-xs text-slate-500 leading-snug">
+            <span className="text-sm text-slate-500 leading-snug">
               Aceito receber atualizações sobre a Nexa e novidades do lançamento.
             </span>
           </label>
           {errors.consent && (
-            <span className="text-red-500 text-xs mt-1">{errors.consent}</span>
+            <span className="text-red-500 text-xs block">{errors.consent}</span>
           )}
         </div>
       </div>
@@ -459,7 +459,7 @@ export default function LeadForm({ onSuccess, savedLead, queuePosition, tier, be
       <button
         type="submit"
         disabled={isSubmitting}
-        className="mt-6 w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-nexa-blue to-nexa-purple text-white font-semibold py-3 transition-transform hover:-translate-y-0.5 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="mt-6 w-full min-h-[44px] inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-nexa-blue to-nexa-purple text-white text-base font-semibold py-3 transition-transform motion-safe:hover:-translate-y-0.5 motion-safe:active:scale-95 focus:outline-none focus:ring-2 focus:ring-nexa-blue/40 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isSubmitting ? (
           <>

@@ -317,14 +317,16 @@ export default function NexaApp() {
           style={{ background: 'radial-gradient(ellipse at center, rgba(137, 88, 243, 0.08) 0%, rgba(167, 139, 250, 0.04) 40%, transparent 70%)' }}
         />
 
-        <div className="relative bg-gradient-to-b from-[#1a1a2e] via-[#16162a] to-[#0f0f1e] rounded-[55px] p-[6px] shadow-[0_0_0_2px_rgba(255,255,255,0.08),0_25px_80px_-12px_rgba(0,0,0,0.6),0_0_100px_-20px_rgba(137,88,243,0.15)] w-[390px]">
+        {/* ALTERADO: w-[390px] -> max-w-[390px] w-full para responsividade */}
+        <div className="relative bg-gradient-to-b from-[#1a1a2e] via-[#16162a] to-[#0f0f1e] rounded-[55px] p-[6px] shadow-[0_0_0_2px_rgba(255,255,255,0.08),0_25px_80px_-12px_rgba(0,0,0,0.6),0_0_100px_-20px_rgba(137,88,243,0.15)] max-w-[370px] w-full">
           <div className="absolute top-5 left-1/2 -translate-x-1/2 w-36 h-7 bg-[#0a0a12] rounded-full flex items-center justify-center gap-6 z-20">
             <div className="w-2.5 h-2.5 bg-[#1e1e3a] rounded-full border border-[#2a2a4a]" />
             <div className="w-16 h-1.5 bg-[#1e1e3a] rounded-full" />
             <div className="w-2.5 h-2.5 rounded-full" />
           </div>
 
-          <div className="relative bg-white rounded-[50px] overflow-y-auto minimal-scrollbar" style={{ height: '720px' }}>
+          {/* ALTERADO: height: '720px' -> maxHeight: '720px', height: '100%', aspectRatio: '390/720' para manter proporção sem estourar */}
+          <div className="relative bg-white rounded-[50px] overflow-y-auto minimal-scrollbar" style={{ maxHeight: '720px', height: '100%', aspectRatio: '390/720' }}>
             {showCelebration && (
               <div className="absolute inset-0 z-50 flex items-center justify-center animate-celebrate-in">
                 <div className="absolute inset-0 bg-gradient-to-b from-slate-900/95 via-slate-900/90 to-slate-900/95 backdrop-blur-sm" />

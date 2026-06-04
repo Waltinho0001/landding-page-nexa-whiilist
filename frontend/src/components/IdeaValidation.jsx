@@ -153,14 +153,14 @@ export default function IdeaValidation({ emailInput, onSurveyComplete, isComplet
   return (
     <div className="bg-slate-900 text-white rounded-3xl p-6 md:p-8 shadow-xl border border-slate-800 relative transition-transform">
       <div className="absolute top-0 right-0 w-20 h-20 bg-nexa-blue/5 rounded-full blur-xl pointer-events-none" />
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center gap-2">
-          <span className="p-1 px-2.5 bg-slate-800 rounded-lg text-xs font-mono font-bold text-nexa-blue">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 min-w-0">
+          <span className="p-1 px-2.5 bg-slate-800 rounded-lg text-xs font-mono font-bold text-nexa-blue w-fit shrink-0">
             Etapa {survey.currentStep + 1} de {STEPS_DATA.length}
           </span>
-          <span className="text-slate-400 text-xs font-medium">{stepInfo.title}</span>
+          <span className="text-slate-400 text-xs font-medium truncate">{stepInfo.title}</span>
         </div>
-        <div className="flex items-center gap-1 text-[11px] text-slate-400">
+        <div className="flex items-center gap-1 text-[11px] text-slate-400 shrink-0">
           <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
           <span>Molda o roadmap</span>
         </div>
@@ -172,7 +172,7 @@ export default function IdeaValidation({ emailInput, onSurveyComplete, isComplet
         />
       </div>
       <div className="min-h-40 flex flex-col justify-center py-2">
-        <h4 className="font-display font-medium text-lg text-white tracking-tight leading-relaxed mb-6">
+        <h4 className="font-display font-medium text-base sm:text-lg text-white tracking-tight leading-relaxed mb-4 sm:mb-6">
           {stepInfo.question}
         </h4>
         {stepInfo.type === 'single' ? (
@@ -184,10 +184,10 @@ export default function IdeaValidation({ emailInput, onSurveyComplete, isComplet
                   key={idx}
                   type="button"
                   onClick={() => handleSelectOption(option)}
-                  className={`w-full text-left p-3.5 rounded-xl text-xs md:text-sm transition-all duration-200 flex justify-between items-center cursor-pointer ${
+                  className={`w-full min-h-[44px] text-left p-3.5 sm:p-4 rounded-xl text-sm md:text-base transition-all duration-200 flex justify-between items-center gap-3 cursor-pointer focus:outline-none focus:ring-2 focus:ring-nexa-blue/40 ${
                     isSelected
                       ? 'bg-nexa-blue/25 border-2 border-nexa-blue text-white shadow-md font-medium'
-                      : 'bg-slate-800/50 hover:bg-slate-800 border-2 border-transparent text-slate-300 hover:text-white'
+                      : 'bg-slate-800/50 hover:bg-slate-800 focus:bg-slate-800 border-2 border-transparent text-slate-300 hover:text-white focus:text-white'
                   }`}
                 >
                   <span className="pr-4 leading-relaxed">{option}</span>
@@ -210,20 +210,20 @@ export default function IdeaValidation({ emailInput, onSurveyComplete, isComplet
                 setAnswers((prev) => ({ ...prev, [survey.currentStep]: e.target.value }));
               }}
               placeholder="Ex: Eu odeio quando aplicativos me mandam notificações punitivas ou e-mails de cobrança se eu perco o streak. Gostaria de um app focado somente em ações do dia de forma limpa."
-              className="w-full bg-slate-800/40 border border-slate-700/60 rounded-xl p-3 text-xs md:text-sm text-slate-200 placeholder:text-slate-500 min-h-27.5 focus:outline-none focus:border-nexa-purple focus:ring-1 focus:ring-nexa-purple/30 focus:bg-slate-800/60 resize-none transition-all"
+              className="w-full bg-slate-800/40 border border-slate-700/60 rounded-xl p-3 text-base text-slate-200 placeholder:text-slate-500 min-h-[120px] focus:outline-none focus:border-nexa-purple focus:ring-1 focus:ring-nexa-purple/30 focus:bg-slate-800/60 resize-y transition-all"
             />
           </div>
         )}
       </div>
-      <div className="flex justify-between items-center mt-8 pt-4 border-t border-slate-800">
+      <div className="flex flex-col-reverse sm:flex-row justify-between items-stretch sm:items-center gap-3 mt-6 sm:mt-8 pt-4 border-t border-slate-800">
         <button
           type="button"
           onClick={handleBack}
           disabled={survey.currentStep === 0}
-          className={`flex items-center gap-1.5 text-xs font-semibold py-2 px-3 rounded-lg border transition-all ${
+          className={`min-h-[44px] inline-flex items-center justify-center gap-1.5 text-sm font-semibold py-2.5 px-4 rounded-lg border transition-all focus:outline-none focus:ring-2 focus:ring-nexa-blue/30 ${
             survey.currentStep === 0
               ? 'border-transparent text-slate-600 cursor-not-allowed'
-              : 'border-slate-700 hover:border-slate-600 text-slate-300 hover:text-white cursor-pointer'
+              : 'border-slate-700 hover:border-slate-600 focus:border-slate-600 text-slate-300 hover:text-white focus:text-white cursor-pointer'
           }`}
         >
           <ArrowLeft className="w-4 h-4" />
@@ -233,7 +233,7 @@ export default function IdeaValidation({ emailInput, onSurveyComplete, isComplet
           type="button"
           onClick={handleNext}
           disabled={savingLoading || !answers[survey.currentStep]}
-          className="bg-gradient-to-r from-nexa-purple to-nexa-blue hover:from-nexa-blue hover:to-nexa-blue-dark text-white text-xs font-semibold py-2.5 px-4 rounded-xl shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          className="min-h-[44px] inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-nexa-purple to-nexa-blue hover:from-nexa-blue hover:to-nexa-blue-dark focus:from-nexa-blue focus:to-nexa-blue-dark text-white text-sm font-semibold py-2.5 px-5 rounded-xl shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-nexa-blue/40 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
         >
           {savingLoading ? (
             'Salvando respostas...'

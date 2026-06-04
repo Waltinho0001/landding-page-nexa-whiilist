@@ -56,18 +56,18 @@ export default function FAQ() {
               onClick={() => toggleOpen(item.id)}
               aria-expanded={isOpen}
               aria-controls={`faq-panel-${item.id}`}
-              className="w-full flex justify-between items-center px-6 py-5 text-left font-sans font-bold text-slate-800 hover:text-nexa-blue transition-colors focus:outline-none focus:ring-2 focus:ring-nexa-blue/30 focus:bg-slate-50 cursor-pointer"
+              className="w-full min-h-[44px] flex justify-between items-center px-4 sm:px-6 py-4 sm:py-5 text-left font-sans font-bold text-slate-800 hover:text-nexa-blue focus:text-nexa-blue transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-nexa-blue/30 focus:bg-slate-50 cursor-pointer gap-4"
             >
-              <span className="text-sm md:text-base pr-4">{item.question}</span>
-              <div className="shrink-0 w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
+              <span className="text-sm md:text-base">{item.question}</span>
+              <div className="shrink-0 min-w-[44px] min-h-[44px] rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
                 {isOpen ? <Minus className="w-3.5 h-3.5 stroke-[2.5]" /> : <Plus className="w-3.5 h-3.5 stroke-[2.5]" />}
               </div>
             </button>
             <div
               id={`faq-panel-${item.id}`}
               aria-labelledby={`faq-btn-${item.id}`}
-              className={`transition-all duration-300 ease-in-out px-6 ${
-                isOpen ? 'max-h-55 pb-5 opacity-100 border-t border-slate-100 pt-4' : 'max-h-0 opacity-0 overflow-hidden'
+              className={`transition-all duration-300 ease-in-out px-4 sm:px-6 ${
+                isOpen ? 'max-h-96 pb-5 opacity-100 border-t border-slate-100 pt-4' : 'max-h-0 opacity-0 overflow-hidden'
               }`}
             >
               <p className="text-slate-500 text-xs md:text-sm leading-relaxed">{item.answer}</p>

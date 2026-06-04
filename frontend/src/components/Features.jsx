@@ -50,13 +50,13 @@ export default function Features() {
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 lg:gap-8">
       {BENEFITS.map((benefit) => (
         <article
           id={benefit.id}
           key={benefit.id}
           aria-labelledby={`benefit-title-${benefit.id}`}
-          className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-xs hover:shadow-xl transition-all duration-300 md:hover:-translate-y-1 group"
+          className="bg-white rounded-2xl p-5 md:p-6 border border-slate-200/60 shadow-xs md:hover:shadow-xl transition-all duration-300 md:motion-safe:hover:-translate-y-1 group focus-within:ring-2 focus-within:ring-nexa-blue/20"
         >
           <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center mb-5 mx-auto group-hover:scale-110 transition-transform">
             {renderIcon(benefit.iconName)}
@@ -72,12 +72,12 @@ export default function Features() {
 
           <h3
             id={`benefit-title-${benefit.id}`}
-            className="font-display font-bold text-lg text-slate-800 tracking-tight mb-2"
+            className="font-display font-bold text-lg md:text-xl text-slate-800 tracking-tight mb-2 text-center sm:text-left"
           >
             {benefit.title}
           </h3>
 
-          <p className="text-sm leading-relaxed text-slate-500">
+          <p className="text-sm md:text-base leading-relaxed text-nexa-gray-muted text-center sm:text-left">
             {benefit.description}
           </p>
         </article>
