@@ -1,18 +1,30 @@
 /**
  * src/services/emailService.js
  * Envio de e-mail de confirmação via Resend SDK.
- * Template HTML premium com gradiente azul/roxo — identidade visual Nexa.
+ *
+ * Security:
+ *   - Escaping HTML de todos os user inputs
+ *   - Error handling seguro (sem exposição de API keys)
+ *   - Template sanitizado contra XSS
  */
 
 import { Resend } from 'resend';
+import { escapeHtml } from '../utils/validation.js';
 
 let resendClient = null;
 
+/**
+ * Inicializa cliente Resend de forma segura.
+ * Nunca expõe RESEND_API_KEY em logs ou erros.
+ *
+ * @throws {Error}
+ * @returns {Resend}
+ */
 function getResendClient() {
   if (!resendClient) {
     const apiKey = process.env.RESEND_API_KEY;
-    if (!apiKey) {
-      throw new Error('[emailService] RESEND_API_KEY não configurada.');
+    if (!apiKey || apiKey.length === 0) {
+      throw new Error('[emailService] Configuration error: API key missing');
     }
     resendClient = new Resend(apiKey);
   }
@@ -20,7 +32,7 @@ function getResendClient() {
 }
 
 /**
- * Formata o timestamp atual no fuso horário de Brasília.
+ * Formata timestamp no fuso horário de Brasília.
  * @returns {string}
  */
 function getBRTTimestamp() {
@@ -35,60 +47,77 @@ function getBRTTimestamp() {
 }
 
 /**
- * Retorna a cor hexadecimal associada ao tier.
+ * Retorna cor hexadecimal associada ao tier.
  * @param {string} tier
  * @returns {string}
  */
 function getTierColor(tier) {
-  const colors = { ELITE: '#f59e0b', FOUNDER: '#8958f3', OBSERVER: '#197cf7' };
+  const colors = {
+    ELITE: '#f59e0b',
+    FOUNDER: '#8958f3',
+    OBSERVER: '#197cf7',
+  };
   return colors[tier] ?? colors.OBSERVER;
 }
 
 /**
- * Retorna o emoji associado ao tier.
+ * Retorna emoji associado ao tier.
  * @param {string} tier
  * @returns {string}
  */
 function getTierEmoji(tier) {
-  const emojis = { ELITE: '⚡', FOUNDER: '🚀', OBSERVER: '🌟' };
+  const emojis = {
+    ELITE: '⚡',
+    FOUNDER: '🚀',
+    OBSERVER: '🌟',
+  };
   return emojis[tier] ?? emojis.OBSERVER;
 }
 
 /**
- * Constrói uma linha de dado no template HTML.
+ * Constrói linha de dado no template HTML com escaping.
+ * Previne XSS: todos os valores são escapados.
+ *
  * @param {string} label
  * @param {string|undefined} value
  * @returns {string}
  */
 function buildDataRow(label, value) {
   if (!value) return '';
+  // Escapa HTML para segurança
+  const escapedLabel = escapeHtml(label);
+  const escapedValue = escapeHtml(value);
+
   return `
     <tr>
       <td style="padding:10px 20px;border-bottom:1px solid #f1f5f9;">
-        <span style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;">${label}</span>
-        <div style="font-size:14px;color:#1e293b;margin-top:3px;font-weight:500;">${value}</div>
+        <span style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;">${escapedLabel}</span>
+        <div style="font-size:14px;color:#1e293b;margin-top:3px;font-weight:500;">${escapedValue}</div>
       </td>
     </tr>`;
 }
 
 /**
- * Constrói a linha de um benefício no template HTML.
+ * Constrói linha de benefício no template HTML.
  * @param {string} perk
  * @returns {string}
  */
 function buildPerkRow(perk) {
+  const escapedPerk = escapeHtml(perk);
   return `
     <tr>
       <td style="padding:5px 20px;">
         <span style="font-size:13px;color:#334155;line-height:1.6;">
-          ✅ ${perk}
+          ✅ ${escapedPerk}
         </span>
       </td>
     </tr>`;
 }
 
 /**
- * Constrói o template HTML completo do e-mail de confirmação.
+ * Constrói template HTML do e-mail de confirmação.
+ * Todos os valores são escapados contra XSS.
+ *
  * @param {object} user
  * @param {number} position
  * @param {object} rewards
@@ -100,6 +129,15 @@ function buildConfirmationEmail(user, position, rewards) {
   const tierEmoji = getTierEmoji(rewards.tier);
   const discountPercent = Math.round(rewards.lifetimeDiscount * 100);
   const perksHtml = rewards.perks.map(buildPerkRow).join('');
+
+  // Escapa valores de usuário
+  const escapedFullName = escapeHtml(user.fullName);
+  const escapedEmail = escapeHtml(user.email);
+  const escapedPhone = user.phone ? escapeHtml(user.phone) : null;
+  const escapedProfession = user.profession ? escapeHtml(user.profession) : null;
+
+  // Extrai primeiro nome de forma segura
+  const firstName = escapedFullName.split(' ')[0] ?? 'Usuário';
 
   return `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -137,7 +175,7 @@ function buildConfirmationEmail(user, position, rewards) {
           <tr>
             <td style="padding:28px 32px 0;">
               <h1 style="margin:0;font-size:22px;font-weight:800;color:#0f172a;line-height:1.3;">
-                Você está na lista, ${user.fullName.split(' ')[0]}! 🎉
+                Você está na lista, ${firstName}! 🎉
               </h1>
               <p style="margin:8px 0 0;font-size:14px;color:#64748b;line-height:1.6;">
                 Sua inscrição no Beta Fechado da <strong style="color:#197cf7;">Nexa</strong> foi confirmada com sucesso.
@@ -168,10 +206,10 @@ function buildConfirmationEmail(user, position, rewards) {
             <td style="padding:0 32px 8px;">
               <h3 style="margin:0 0 10px;font-size:12px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;">Seus Dados</h3>
               <table width="100%" style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
-                ${buildDataRow('Nome', user.fullName)}
-                ${buildDataRow('E-mail', user.email)}
-                ${user.phone ? buildDataRow('Telefone / WhatsApp', user.phone) : ''}
-                ${user.profession ? buildDataRow('Perfil Profissional', user.profession) : ''}
+                ${buildDataRow('Nome', escapedFullName)}
+                ${buildDataRow('E-mail', escapedEmail)}
+                ${escapedPhone ? buildDataRow('Telefone / WhatsApp', escapedPhone) : ''}
+                ${escapedProfession ? buildDataRow('Perfil Profissional', escapedProfession) : ''}
               </table>
             </td>
           </tr>
@@ -239,7 +277,9 @@ function buildConfirmationEmail(user, position, rewards) {
 }
 
 /**
- * Constrói o template HTML do e-mail interno de notificação (para a equipe).
+ * Constrói template HTML do e-mail interno de notificação (para equipe).
+ * Também com escaping de segurança.
+ *
  * @param {object} user
  * @param {number} position
  * @param {object} rewards
@@ -249,6 +289,13 @@ function buildInternalNotificationEmail(user, position, rewards) {
   const timestamp = getBRTTimestamp();
   const tierColor = getTierColor(rewards.tier);
   const tierEmoji = getTierEmoji(rewards.tier);
+
+  // Escapa valores
+  const escapedFullName = escapeHtml(user.fullName);
+  const escapedEmail = escapeHtml(user.email);
+  const escapedPhone = user.phone ? escapeHtml(user.phone) : null;
+  const escapedSocial = user.socialMedia ? escapeHtml(user.socialMedia) : null;
+  const escapedProfession = user.profession ? escapeHtml(user.profession) : null;
 
   return `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -275,11 +322,11 @@ function buildInternalNotificationEmail(user, position, rewards) {
           <tr>
             <td style="padding:0 28px 20px;">
               <table width="100%" style="border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
-                ${buildDataRow('Nome', user.fullName)}
-                ${buildDataRow('E-mail', user.email)}
-                ${user.phone ? buildDataRow('Telefone', user.phone) : ''}
-                ${user.socialMedia ? buildDataRow('Rede Social', user.socialMedia) : ''}
-                ${user.profession ? buildDataRow('Perfil', user.profession) : ''}
+                ${buildDataRow('Nome', escapedFullName)}
+                ${buildDataRow('E-mail', escapedEmail)}
+                ${escapedPhone ? buildDataRow('Telefone', escapedPhone) : ''}
+                ${escapedSocial ? buildDataRow('Rede Social', escapedSocial) : ''}
+                ${escapedProfession ? buildDataRow('Perfil', escapedProfession) : ''}
               </table>
             </td>
           </tr>
@@ -295,6 +342,7 @@ function buildInternalNotificationEmail(user, position, rewards) {
 </body>
 </html>`;
 }
+
 
 /**
  * Envia e-mail de confirmação para o usuário e notificação interna para a equipe.

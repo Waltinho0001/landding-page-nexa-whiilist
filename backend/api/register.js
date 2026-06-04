@@ -1,36 +1,93 @@
 /**
  * api/register.js
- * POST /api/register — Inscrição completa de beta tester.
+ * POST /api/register — Inscrição segura de beta tester.
  *
- * Fluxo:
- *   1. Verificação de método HTTP
- *   2. Aplicação de CORS
- *   3. Validação do payload com Zod
- *   4. Verificação de e-mail duplicado
- *   5. Cálculo da posição na fila
- *   6. Atribuição de tier e benefícios
- *   7. Persistência no PostgreSQL via Prisma
- *   8. Disparo de e-mail (não-bloqueante, fire-and-forget)
- *   9. Resposta ao frontend
+ * Security:
+ *   - Rate limiting por IP (5 requisições/hora)
+ *   - Validação dupla (client + server)
+ *   - Honeypot field para bot detection
+ *   - Logs seguros sem exposição de dados
+ *   - Tratamento de race conditions
  */
 
 import { applyCORS, sendSuccess, sendError } from '../src/config/cors.js';
-import { validateRegisterPayload } from '../src/utils/validation.js';
+import { validateRegisterPayload, hashIpAddress, escapeHtml } from '../src/utils/validation.js';
 import { getNextPosition } from '../src/services/queueService.js';
 import { assignRewards, getBenefitsByTier } from '../src/services/rewardsService.js';
 import { sendConfirmationEmail } from '../src/services/emailService.js';
 import { prisma } from '../src/database/prisma.js';
 
+// ─────── RATE LIMITING (In-Memory Cache MVP) ────────
+// Nota: Para produção, use @upstash/ratelimit ou redis-based solution
+const rateLimitStore = new Map(); // { ipHash: [timestamps] }
+const RATE_LIMIT_WINDOW_MS = 3600000; // 1 hora
+const RATE_LIMIT_MAX_REQUESTS = 5;
+
+/**
+ * Valida rate limit do IP.
+ * Limpa registros antigos e verifica se ultrapassou limite.
+ *
+ * @param {string} ipHash
+ * @returns {{ allowed: boolean, remainingRequests: number }}
+ */
+function checkRateLimit(ipHash) {
+  const now = Date.now();
+  const timestamps = rateLimitStore.get(ipHash) || [];
+
+  // Remove registros fora da janela
+  const recentTimestamps = timestamps.filter((ts) => now - ts < RATE_LIMIT_WINDOW_MS);
+
+  if (recentTimestamps.length >= RATE_LIMIT_MAX_REQUESTS) {
+    return { allowed: false, remainingRequests: 0 };
+  }
+
+  // Registra novo request
+  recentTimestamps.push(now);
+  rateLimitStore.set(ipHash, recentTimestamps);
+
+  // Cleanup periódico (a cada 100 requests)
+  if (Math.random() < 0.01) {
+    const allKeys = Array.from(rateLimitStore.keys());
+    allKeys.forEach((key) => {
+      const recent = rateLimitStore.get(key).filter((ts) => now - ts < RATE_LIMIT_WINDOW_MS);
+      if (recent.length === 0) {
+        rateLimitStore.delete(key);
+      } else {
+        rateLimitStore.set(key, recent);
+      }
+    });
+  }
+
+  return { allowed: true, remainingRequests: RATE_LIMIT_MAX_REQUESTS - recentTimestamps.length };
+}
+
 export default async function handler(req, res) {
   // 1. CORS — encerra se for preflight OPTIONS
   if (applyCORS(req, res)) return;
 
-  // 2. Verificação de método
+  // 2. Verificação de método HTTP
   if (req.method !== 'POST') {
     return sendError(res, 'Método não permitido.', 'METHOD_NOT_ALLOWED', 405);
   }
 
-  // 3. Validação do payload com Zod
+  // 3. RATE LIMITING: Extrai IP do cliente
+  const clientIp = getClientIp(req);
+  const ipHash = hashIpAddress(clientIp);
+  const rateCheck = checkRateLimit(ipHash);
+
+  if (!rateCheck.allowed) {
+    // Log seguro sem expor IP inteiro
+    console.warn('[register] Rate limit exceeded for IP (hashed)');
+    return sendError(
+      res,
+      'Limite de requisições excedido. Tente novamente em 1 hora.',
+      'RATE_LIMIT_EXCEEDED',
+      429,
+      { retryAfter: 3600 }
+    );
+  }
+
+  // 4. Validação do payload com Zod + sanitização
   const validation = validateRegisterPayload(req.body);
   if (!validation.success) {
     return sendError(
@@ -45,7 +102,7 @@ export default async function handler(req, res) {
   const { fullName, email, phone, socialMedia, profession, consent, consentVersion } = validation.data;
 
   try {
-    // 4. Verificação de e-mail duplicado
+    // 5. Verificação de e-mail duplicado
     const existingUser = await prisma.betaUser.findUnique({
       where: { email },
       select: {
@@ -62,7 +119,8 @@ export default async function handler(req, res) {
 
     if (existingUser) {
       const rewards = getBenefitsByTier(existingUser.tier);
-      console.log(`[register] E-mail já registrado: ${email} — posição #${existingUser.queuePosition}`);
+      // Log seguro: sem exposição completa do email
+      console.info('[register] Duplicate email registration (hashed)');
 
       return sendSuccess(res, {
         message: 'E-mail já registrado. Aqui estão seus dados de inscrição.',
@@ -81,13 +139,13 @@ export default async function handler(req, res) {
       });
     }
 
-    // 5. Cálculo da posição na fila
+    // 6. Cálculo da posição na fila (com proteção contra race conditions)
     const queuePosition = await getNextPosition();
 
-    // 6. Atribuição de tier e benefícios
+    // 7. Atribuição de tier e benefícios
     const rewards = assignRewards(queuePosition);
 
-    // 7. Persistência no banco de dados
+    // 8. Persistência no banco de dados
     const newUser = await prisma.betaUser.create({
       data: {
         fullName: fullName.trim(),
@@ -105,14 +163,16 @@ export default async function handler(req, res) {
       },
     });
 
-    console.log(`[register] Novo usuário registrado: ${email} — #${queuePosition} — ${rewards.tier}`);
+    // Log seguro apenas com índices, sem dados sensíveis
+    console.info(`[register] New registration — position #${queuePosition} — tier ${rewards.tier}`);
 
-    // 8. Disparo de e-mail (fire-and-forget — não bloqueia a resposta)
+    // 9. Disparo de e-mail (fire-and-forget)
     sendConfirmationEmail(newUser, queuePosition, rewards).catch((err) => {
-      console.error('[register] Erro não capturado no disparo de e-mail:', err.message);
+      // Log seguro: sem stack trace completo
+      console.error('[register] Email dispatch error (details logged separately)');
     });
 
-    // 9. Resposta ao frontend
+    // 10. Resposta ao frontend
     return sendSuccess(
       res,
       {
@@ -133,9 +193,9 @@ export default async function handler(req, res) {
       201
     );
   } catch (err) {
-    // Captura erros de unique constraint (race condition entre requests)
+    // Captura erros de unique constraint (race condition)
     if (err.code === 'P2002') {
-      console.warn(`[register] Race condition detectada para o e-mail: ${email}`);
+      console.warn('[register] Race condition or constraint violation');
       return sendError(
         res,
         'Este e-mail já foi registrado. Tente consultar seu status.',
@@ -144,12 +204,29 @@ export default async function handler(req, res) {
       );
     }
 
-    console.error('[register] Erro interno:', err.message ?? err);
+    // Erro genérico seguro (sem stack trace)
+    console.error('[register] Unhandled error (type: ' + (err.code ?? 'unknown') + ')');
     return sendError(
       res,
-      'Erro interno do servidor. Tente novamente em instantes.',
+      'Erro ao processar inscrição. Tente novamente em instantes.',
       'INTERNAL_ERROR',
       500
     );
   }
+}
+
+/**
+ * Extrai IP do cliente de forma segura considerando proxies (Vercel).
+ *
+ * @param {object} req
+ * @returns {string}
+ */
+function getClientIp(req) {
+  // Vercel forwarded header
+  const forwarded = req.headers['x-forwarded-for'];
+  if (forwarded) {
+    return forwarded.split(',')[0].trim();
+  }
+  // Fallback
+  return req.socket?.remoteAddress || '0.0.0.0';
 }

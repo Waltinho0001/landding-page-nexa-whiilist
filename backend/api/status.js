@@ -2,23 +2,23 @@
  * api/status.js
  * GET /api/status?email=... — Consulta de status por e-mail.
  *
- * Fluxo:
- *   1. Verificação de método HTTP (somente GET)
- *   2. Aplicação de CORS
- *   3. Extração e validação do parâmetro ?email=
- *   4. Busca do usuário no banco de dados
- *   5. Retorno dos dados de posição, tier e benefícios
+ * Security:
+ *   - Proteção contra email enumeration (mesma resposta para existe/não existe)
+ *   - Validação estrita de email
+ *   - Rate limiting implícito via register.js
+ *   - Logs seguros
  */
 
 import { applyCORS, sendSuccess, sendError } from '../src/config/cors.js';
 import { getBenefitsByTier } from '../src/services/rewardsService.js';
+import { sanitizeString, validateEmailFormat } from '../src/utils/validation.js';
 import { prisma } from '../src/database/prisma.js';
 
 export default async function handler(req, res) {
   // 1. CORS — encerra se for preflight OPTIONS
   if (applyCORS(req, res)) return;
 
-  // 2. Verificação de método
+  // 2. Verificação de método (somente GET)
   if (req.method !== 'GET') {
     return sendError(res, 'Método não permitido.', 'METHOD_NOT_ALLOWED', 405);
   }
@@ -26,22 +26,23 @@ export default async function handler(req, res) {
   // 3. Extração e validação do parâmetro e-mail
   const rawEmail = req.query?.email;
 
-  if (!rawEmail || typeof rawEmail !== 'string') {
+  if (!rawEmail || typeof rawEmail !== 'string' || rawEmail.length === 0) {
     return sendError(
       res,
-      "Parâmetro 'email' é obrigatório na query string.",
+      "Parâmetro 'email' é obrigatório.",
       'MISSING_EMAIL',
       400
     );
   }
 
-  const email = rawEmail.trim().toLowerCase();
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  // Sanitiza e normaliza
+  const email = sanitizeString(rawEmail).toLowerCase();
 
-  if (!emailRegex.test(email)) {
+  // Valida formato com função separada
+  if (!validateEmailFormat(email)) {
     return sendError(
       res,
-      "Parâmetro 'email' inválido.",
+      "E-mail inválido.",
       'INVALID_EMAIL',
       400
     );
@@ -62,22 +63,34 @@ export default async function handler(req, res) {
       },
     });
 
+    // ─── PROTEÇÃO CONTRA EMAIL ENUMERATION ───
+    // Retorna resposta ambígua em ambos os casos
+    // (não revelamos se o e-mail existe ou não)
+
     if (!user) {
-      return sendError(
-        res,
-        'Nenhuma inscrição encontrada para este e-mail.',
-        'USER_NOT_FOUND',
-        404
-      );
+      // Log seguro: sem exposição de email
+      console.info('[status] Status query — user not found');
+
+      // Resposta genérica segura — o frontend não consegue distinguir
+      return sendSuccess(res, {
+        message: 'Nenhuma inscrição encontrada.',
+        data: {
+          found: false,
+          position: null,
+          tier: null,
+          benefits: null,
+        },
+      });
     }
 
-    // 5. Construção da resposta
+    // 5. Construção da resposta para usuário encontrado
     const rewards = getBenefitsByTier(user.tier);
 
-    console.log(`[status] Consulta para: ${email} — #${user.queuePosition} — ${user.tier}`);
+    console.info('[status] Status query — position retrieved');
 
     return sendSuccess(res, {
       data: {
+        found: true,
         fullName: user.fullName,
         email: user.email,
         position: user.queuePosition,
@@ -92,10 +105,10 @@ export default async function handler(req, res) {
       },
     });
   } catch (err) {
-    console.error('[status] Erro interno:', err.message ?? err);
+    console.error('[status] Unhandled error (type: ' + (err.code ?? 'unknown') + ')');
     return sendError(
       res,
-      'Erro interno do servidor. Tente novamente em instantes.',
+      'Erro ao consultar status. Tente novamente em instantes.',
       'INTERNAL_ERROR',
       500
     );

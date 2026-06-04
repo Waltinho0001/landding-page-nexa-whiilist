@@ -15,8 +15,27 @@ const __dirname = path.dirname(__filename);
 
 // Carrega .env.local da raiz do projeto
 dotenv.config({ path: path.join(__dirname, '../../.env.local') });
-// Fallback para .env (no backend)
-dotenv.config({ path: path.join(__dirname, '../.env') });
+
+// Se os valores carregados forem placeholders do exemplo (.env.example),
+// nós limpamos eles para permitir o fallback correto das credenciais reais do .env
+if (process.env.DATABASE_URL && process.env.DATABASE_URL.includes('db.example.com')) {
+  delete process.env.DATABASE_URL;
+}
+if (process.env.RESEND_API_KEY === 're_xxxxxxxxxxxxxxxxxxxxxxxx') {
+  delete process.env.RESEND_API_KEY;
+}
+if (process.env.CORPORATE_EMAIL === 'team@nexa.example.com') {
+  delete process.env.CORPORATE_EMAIL;
+}
+if (process.env.DOMAIN === 'https://nexa.example.com') {
+  delete process.env.DOMAIN;
+}
+if (process.env.ADMIN_SECRET && process.env.ADMIN_SECRET.includes('mude-este-segreto-antes-de-producao')) {
+  delete process.env.ADMIN_SECRET;
+}
+
+// Carrega .env da raiz do projeto (apontado corretamente para '../../.env' em vez de '../.env')
+dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 import express from 'express';
 import cors from 'cors';
@@ -71,7 +90,7 @@ app.get('/api/status', vercelAdapter(statusHandler));
 app.post('/api/send-email', vercelAdapter(sendEmailHandler));
 app.options('/api/*', (req, res) => res.status(204).end());
 
-// Adimin
+// Admin
 app.get('/api/admin/stats', vercelAdapter(adminStatsHandler));
 app.get('/api/admin/list', vercelAdapter(adminListHandler));
 app.get('/api/admin/export', vercelAdapter(adminExportHandler));
