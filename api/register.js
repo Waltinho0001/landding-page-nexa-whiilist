@@ -41,12 +41,38 @@ function checkRateLimit(ipHash) {
   return { allowed: true };
 }
 
+// api/register.js - Função getClientIp CORRIGIDA
+
+/**
+ * Extrai o IP do cliente de forma segura, considerando proxies (Vercel, Cloudflare, etc.)
+ * Retorna hash SHA256 do IP para rate limiting (sem armazenar IP puro - LGPD)
+ */
 function getClientIp(req) {
+  // Tenta obter IP de headers de proxy (ordem de prioridade)
   const forwarded = req.headers['x-forwarded-for'];
+  const realIp = req.headers['x-real-ip'];
+  const cfConnectingIp = req.headers['cf-connecting-ip'];
+  
+  let ip = '';
+  
   if (forwarded) {
-    return String(forwarded).split(',')[0].trim();
+    // x-forwarded-for pode ter múltiplos IPs: "client, proxy1, proxy2"
+    ip = forwarded.split(',')[0].trim();
+  } else if (realIp) {
+    ip = realIp;
+  } else if (cfConnectingIp) {
+    ip = cfConnectingIp;
+  } else {
+    // Fallback para conexão direta
+    ip = req.socket?.remoteAddress || req.connection?.remoteAddress || 'unknown';
   }
-  return req.socket?.remoteAddress || '0.0.0.0';
+  
+  // Remove prefixo IPv6 (::ffff:) se presente
+  ip = ip.replace('::ffff:', '');
+  
+  // Gera hash SHA256 para rate limiting (LGPD: não armazenar IP puro)
+  const crypto = require('crypto');
+  return crypto.createHash('sha256').update(ip).digest('hex');
 }
 
 function fakeHoneypotSuccess(res) {
