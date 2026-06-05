@@ -1,15 +1,15 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
     "checkJs": true,
     "jsx": "react-jsx",
     "moduleResolution": "bundler",
     "target": "ES2022",
-    "module": "ESNext",
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"]
-    }
+    "module": "ESNext"
   },
-  "include": ["src/**/*", "api/**/*"],
-  "exclude": ["node_modules", "frontend/node_modules"]
+  "include": ["frontend/src/**/*", "api/**/*", "src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }

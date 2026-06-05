@@ -1,20 +1,10 @@
 /**
  * src/utils/csvGenerator.js
- * Conversão segura de array de objetos para formato CSV.
- * Zero dependências externas.
- *
- * Features:
- *   - Escape de vírgulas, aspas e quebras de linha
- *   - Headers customizáveis
- *   - Suporte a valores null/undefined
+ * Conversão segura para CSV (escape de vírgulas, aspas e quebras de linha).
  */
 
 /**
- * Escapa um valor para formato CSV seguro.
- * - Envolve em aspas se conter vírgula, aspa ou quebra de linha
- * - Dobra aspas internas (" vira "")
- *
- * @param {any} value - Valor a ser escapado
+ * @param {unknown} value
  * @returns {string}
  */
 function escapeCSVValue(value) {
@@ -23,12 +13,9 @@ function escapeCSVValue(value) {
   }
 
   const stringValue = String(value);
-
-  // Verifica se precisa de escaping
   const needsQuotes = /[",\n\r]/.test(stringValue);
 
   if (needsQuotes) {
-    // Dobra aspas internas e envolve em aspas
     const escaped = stringValue.replace(/"/g, '""');
     return `"${escaped}"`;
   }
@@ -37,10 +24,8 @@ function escapeCSVValue(value) {
 }
 
 /**
- * Converte um array de objetos para string CSV.
- *
- * @param {Array<Object>} data - Array de objetos com dados
- * @param {Array<string>} headers - Lista de chaves para usar como headers (opcional)
+ * @param {Array<Record<string, unknown>>} data
+ * @param {string[]} headers
  * @returns {string}
  */
 export function arrayToCSV(data, headers) {
@@ -48,27 +33,17 @@ export function arrayToCSV(data, headers) {
     return '';
   }
 
-  // Se headers não fornecido, usa chaves do primeiro objeto
   const csvHeaders = headers || Object.keys(data[0]);
-
-  // Constrói linha de header
   const headerLine = csvHeaders.map(escapeCSVValue).join(',');
+  const dataLines = data.map((row) =>
+    csvHeaders.map((header) => escapeCSVValue(row[header])).join(',')
+  );
 
-  // Constrói linhas de dados
-  const dataLines = data.map((row) => {
-    return csvHeaders
-      .map((header) => escapeCSVValue(row[header]))
-      .join(',');
-  });
-
-  // Junta tudo com quebras de linha Unix
   return [headerLine, ...dataLines].join('\n');
 }
 
 /**
- * Gera CSV completo com headers específicos para beta users.
- *
- * @param {Array<Object>} users - Array de usuários do Prisma
+ * @param {Array<object>} users
  * @returns {string}
  */
 export function generateBetaUsersCSV(users) {
@@ -85,7 +60,6 @@ export function generateBetaUsersCSV(users) {
     'createdAt',
   ];
 
-  // Formata dados para garantir consistência
   const formattedData = users.map((user) => ({
     queuePosition: user.queuePosition,
     fullName: user.fullName,
@@ -96,9 +70,10 @@ export function generateBetaUsersCSV(users) {
     tier: user.tier,
     premiumMonths: user.premiumMonths,
     lifetimeDiscount: user.lifetimeDiscount,
-    createdAt: user.createdAt instanceof Date
-      ? user.createdAt.toISOString()
-      : String(user.createdAt),
+    createdAt:
+      user.createdAt instanceof Date
+        ? user.createdAt.toISOString()
+        : String(user.createdAt),
   }));
 
   return arrayToCSV(formattedData, headers);

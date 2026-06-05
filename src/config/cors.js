@@ -1,42 +1,42 @@
 /**
  * src/config/cors.js
- * Headers CORS e utilitários de resposta padronizados.
+ * CORS restrito (allowlist explícita) e respostas JSON padronizadas.
+ * Referência: SECURITY_AUDIT_CHECKLIST.md — CORS sem wildcard.
  */
 
 const ALLOWED_ORIGINS = [
-  process.env.DOMAIN || '',
+  process.env.DOMAIN,
+  process.env.FRONTEND_URL,
+  process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
   'http://localhost:3000',
   'http://localhost:5173',
   'http://localhost:3001',
 ].filter(Boolean);
 
 /**
- * Retorna os headers CORS para uma request específica.
- * Usa lista de origens permitidas em vez de '*' por segurança.
- *
- * @param {object} req - Objeto request do Vercel/Node
- * @returns {object} headers CORS
+ * @param {object} req
+ * @returns {Record<string, string>}
  */
 export function getCORSHeaders(req) {
   const origin = req?.headers?.origin || '';
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0] || '*';
-
-  return {
-    'Access-Control-Allow-Origin': allowedOrigin,
+  const headers = {
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Accept, Authorization',
     'Access-Control-Max-Age': '86400',
-    'Vary': 'Origin',
   };
+
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    headers['Access-Control-Allow-Origin'] = origin;
+    headers['Vary'] = 'Origin';
+  }
+
+  return headers;
 }
 
 /**
- * Aplica headers CORS à resposta e verifica se é um preflight OPTIONS.
- * Retorna true se a resposta já foi encerrada (preflight).
- *
  * @param {object} req
  * @param {object} res
- * @returns {boolean} true se for preflight e a resposta já foi encerrada
+ * @returns {boolean}
  */
 export function applyCORS(req, res) {
   const headers = getCORSHeaders(req);
@@ -53,22 +53,18 @@ export function applyCORS(req, res) {
 }
 
 /**
- * Envia uma resposta JSON padronizada de sucesso.
- *
  * @param {object} res
- * @param {object} data
+ * @param {object} payload
  * @param {number} statusCode
  */
-export function sendSuccess(res, data, statusCode = 200) {
+export function sendSuccess(res, payload, statusCode = 200) {
   res.status(statusCode).json({
     success: true,
-    ...data,
+    ...payload,
   });
 }
 
 /**
- * Envia uma resposta JSON padronizada de erro.
- *
  * @param {object} res
  * @param {string} message
  * @param {string} errorCode
