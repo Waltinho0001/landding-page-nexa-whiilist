@@ -44,7 +44,7 @@ function checkRateLimit(ipHash) {
 function getClientIp(req) {
   const forwarded = req.headers['x-forwarded-for'];
   if (forwarded) {
-    return String(foredwarded).split(',')[0].trim();
+    return String(forwarded).split(',')[0].trim();
   }
   return req.socket?.remoteAddress || '0.0.0.0';
 }
