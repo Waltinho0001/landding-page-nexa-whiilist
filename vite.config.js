@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -7,40 +8,34 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export default defineConfig({
-  plugins: [react()],
-  
-  // 🔑 CRUCIAL: Paths relativos para assets funcionarem em qualquer CDN/subdiretório
-  base: './',
-  
-  // Mantém configuração de pasta
+  plugins: [react(), tailwindcss()],
+
+  base: '/',
+
   root: './frontend',
-  
+
   build: {
     outDir: '../dist',
     emptyOutDir: true,
     assetsDir: 'assets',
     sourcemap: false,
-    // Garante que CSS seja extraído corretamente
     cssCodeSplit: true,
-    rollupOptions: {
-      output: {
-        manualChunks: undefined,
-      },
-    },
   },
-  
+
   server: {
     port: 5173,
     open: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
+    },
   },
-  
+
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './frontend/src'),
     },
-  },
-  
-  css: {
-    postcss: './frontend/postcss.config.js',
   },
 });

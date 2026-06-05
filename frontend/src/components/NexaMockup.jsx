@@ -54,7 +54,7 @@ export default function NexaApp() {
   const [editText, setEditText] = useState('');
   const [toast, setToast] = useState(null);
   const [toastType, setToastType] = useState('success');
-  const [deleteMode, setDeleteMode] = useState(false);
+  
   const intervalRef = useRef(null);
   const toastTimeoutRef = useRef(null);
 
@@ -201,16 +201,23 @@ export default function NexaApp() {
           if (nextCompleted) {
             setCompletedToday((c) => {
               const next = c + 1;
-              if (c === 0) setStreakCount((s) => s + 1);
+              const newStreak = c === 0 ? streakCount + 1 : streakCount;
+              
+              if (c === 0) {
+                setStreakCount(newStreak);
+              }
+              
+              setCelebrationData({ title: t.title, streak: newStreak });
+              setShowCelebration(true);
+              triggerConfetti();
+              
+              setTimeout(() => {
+                setShowCelebration(false);
+                setCelebrationData(null);
+              }, 2500);
+              
               return next;
             });
-            setCelebrationData({ title: t.title, streak: streakCount + 1 });
-            setShowCelebration(true);
-            triggerConfetti();
-            setTimeout(() => {
-              setShowCelebration(false);
-              setCelebrationData(null);
-            }, 2500);
           } else {
             setCompletedToday((c) => Math.max(0, c - 1));
           }
@@ -317,16 +324,14 @@ export default function NexaApp() {
           style={{ background: 'radial-gradient(ellipse at center, rgba(137, 88, 243, 0.08) 0%, rgba(167, 139, 250, 0.04) 40%, transparent 70%)' }}
         />
 
-        {/* ALTERADO: w-[390px] -> max-w-[390px] w-full para responsividade */}
-        <div className="relative bg-gradient-to-b from-[#1a1a2e] via-[#16162a] to-[#0f0f1e] rounded-[55px] p-[6px] shadow-[0_0_0_2px_rgba(255,255,255,0.08),0_25px_80px_-12px_rgba(0,0,0,0.6),0_0_100px_-20px_rgba(137,88,243,0.15)] max-w-[370px] w-full">
+        <div className="relative w-[370px] max-w-full shrink-0 bg-gradient-to-b from-[#1a1a2e] via-[#16162a] to-[#0f0f1e] rounded-[55px] p-[6px] shadow-[0_0_0_2px_rgba(255,255,255,0.08),0_25px_80px_-12px_rgba(0,0,0,0.6),0_0_100px_-20px_rgba(137,88,243,0.15)]">
           <div className="absolute top-5 left-1/2 -translate-x-1/2 w-36 h-7 bg-[#0a0a12] rounded-full flex items-center justify-center gap-6 z-20">
             <div className="w-2.5 h-2.5 bg-[#1e1e3a] rounded-full border border-[#2a2a4a]" />
             <div className="w-16 h-1.5 bg-[#1e1e3a] rounded-full" />
             <div className="w-2.5 h-2.5 rounded-full" />
           </div>
 
-          {/* ALTERADO: height: '720px' -> maxHeight: '720px', height: '100%', aspectRatio: '390/720' para manter proporção sem estourar */}
-          <div className="relative bg-white rounded-[50px] overflow-y-auto minimal-scrollbar" style={{ maxHeight: '720px', height: '100%', aspectRatio: '390/720' }}>
+          <div className="relative bg-white rounded-[50px] w-full overflow-hidden flex flex-col" style={{ aspectRatio: '370/720' }}>
             {showCelebration && (
               <div className="absolute inset-0 z-50 flex items-center justify-center animate-celebrate-in">
                 <div className="absolute inset-0 bg-gradient-to-b from-slate-900/95 via-slate-900/90 to-slate-900/95 backdrop-blur-sm" />
@@ -424,7 +429,7 @@ export default function NexaApp() {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-4 pb-4 hide-scrollbar">
+            <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 hide-scrollbar">
               {activeTab === 'input' ? (
                 <div className="space-y-3 animate-slide-up">
                   <div className="relative rounded-3xl overflow-hidden">
@@ -668,7 +673,6 @@ export default function NexaApp() {
                 <div className="flex flex-col h-full animate-slide-up">
                   {currentFocusTask ? (
                     <>
-                      {/* Enhanced Task Card with gradient left border */}
                       <div className="relative rounded-2xl bg-white p-4 border border-slate-100 shadow-sm overflow-hidden">
                         <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-[#8958f3] to-[#6d3ad4]" />
                         <div className="flex items-center justify-between mb-2 pl-1">
@@ -697,17 +701,14 @@ export default function NexaApp() {
                         </p>
                       </div>
 
-                      {/* Improved Timer Section */}
                       <div className="flex flex-col items-center justify-center flex-1 gap-4 py-4">
                         <div className="relative animate-timer-glow">
                           <div className="absolute inset-2 w-40 h-40 bg-gradient-to-br from-[#8958f3]/8 to-[#a78bfa]/5 rounded-full blur-md" />
                           
                           <svg className="w-40 h-40 relative z-10" viewBox="0 0 160 160" style={{ transform: 'rotate(-90deg)' }}>
-                            {/* Background circle */}
                             <circle cx="80" cy="80" r="70" className="stroke-slate-100" strokeWidth="8" fill="none" />
                             <circle cx="80" cy="80" r="64" className="stroke-slate-200/30" strokeWidth="1" fill="none" />
                             
-                            {/* Progress circle */}
                             <circle
                               cx="80"
                               cy="80"
@@ -728,7 +729,6 @@ export default function NexaApp() {
                             </defs>
                           </svg>
                           
-                          {/* Timer Display */}
                           <div className="absolute inset-0 flex flex-col items-center justify-center z-20">
                             <span className="font-mono text-3xl font-black text-slate-900 tracking-tight leading-none">
                               {formatMinSec(timerDuration)}
@@ -739,7 +739,6 @@ export default function NexaApp() {
                           </div>
                         </div>
 
-                        {/* Preset Buttons */}
                         <div className="flex items-center gap-2">
                           {TIMER_PRESETS.map((preset, idx) => {
                             const Icon = preset.icon;
@@ -761,7 +760,6 @@ export default function NexaApp() {
                           })}
                         </div>
 
-                        {/* Timer Controls */}
                         <div className="flex items-center gap-3">
                           <button
                             type="button"
@@ -803,7 +801,6 @@ export default function NexaApp() {
                         </div>
                       </div>
 
-                      {/* Action Buttons */}
                       <div className="mt-auto space-y-2">
                         <button
                           type="button"
