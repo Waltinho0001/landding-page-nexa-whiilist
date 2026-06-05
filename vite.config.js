@@ -3,35 +3,35 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// Fix para __dirname em ES Modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export default defineConfig({
   plugins: [react()],
   
-  // 🔑 CRUCIAL: Usa paths relativos para assets funcionarem em qualquer subdiretório/CDN
+  // 🔑 CRUCIAL: Paths relativos para assets funcionarem em qualquer CDN/subdiretório
   base: './',
   
-  // Mantém a configuração de pasta do frontend
+  // Mantém configuração de pasta
   root: './frontend',
   
   build: {
-    // Output na raiz para a Vercel encontrar
     outDir: '../dist',
     emptyOutDir: true,
-    // Otimizações para produção
     assetsDir: 'assets',
     sourcemap: false,
-    // Garante que o manifest seja gerado corretamente
-    manifest: false,
+    // Garante que CSS seja extraído corretamente
+    cssCodeSplit: true,
+    rollupOptions: {
+      output: {
+        manualChunks: undefined,
+      },
+    },
   },
   
   server: {
     port: 5173,
     open: true,
-    // Permite CORS para desenvolvimento local com backend separado
-    cors: true,
   },
   
   resolve: {
@@ -40,8 +40,7 @@ export default defineConfig({
     },
   },
   
-  // Otimização de dependências para build mais rápido
-  optimizeDeps: {
-    include: ['react', 'react-dom', 'lucide-react'],
+  css: {
+    postcss: './frontend/postcss.config.js',
   },
 });
