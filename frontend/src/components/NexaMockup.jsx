@@ -331,7 +331,7 @@ export default function NexaApp() {
             <div className="w-2.5 h-2.5 rounded-full" />
           </div>
 
-          <div className="relative bg-white rounded-[50px] w-full overflow-hidden flex flex-col" style={{ aspectRatio: '370/720' }}>
+          <div className="relative bg-white rounded-[50px] w-full overflow-y-auto minimal-scrollbar" style={{ aspectRatio: '370/720', maxHeight: '720px' }}>
             {showCelebration && (
               <div className="absolute inset-0 z-50 flex items-center justify-center animate-celebrate-in">
                 <div className="absolute inset-0 bg-gradient-to-b from-slate-900/95 via-slate-900/90 to-slate-900/95 backdrop-blur-sm" />
@@ -429,7 +429,7 @@ export default function NexaApp() {
               </button>
             </div>
 
-            <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 hide-scrollbar">
+            <div className="px-4 pb-4">
               {activeTab === 'input' ? (
                 <div className="space-y-3 animate-slide-up">
                   <div className="relative rounded-3xl overflow-hidden">
