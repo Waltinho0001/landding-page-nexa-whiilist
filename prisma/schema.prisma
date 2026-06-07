@@ -20,7 +20,7 @@ model BetaUser {
   consent         Boolean  @default(false)
 
   // Fila e recompensas
-  queuePosition   Int      @unique @default(autoincrement())
+  queuePosition   Int      @unique  // ← REMOVIDO: @default(autoincrement())
   tier            String   @default("OBSERVER")
   premiumMonths   Int      @default(6)
   lifetimeDiscount Float   @default(0.30)

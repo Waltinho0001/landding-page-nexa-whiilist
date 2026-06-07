@@ -2,6 +2,7 @@
  * api/register.js — POST /api/register
  * Rate limit, honeypot, Zod, Prisma, Resend (fire-and-forget).
  * Referência: SECURITY_AUDIT_CHECKLIST.md
+ * Compatível com Vercel Serverless Functions + ES Modules
  */
 
 import { applyCORS, sendSuccess, sendError } from '../src/config/cors.js';
@@ -9,15 +10,22 @@ import {
   validateRegisterPayload,
   hashIpAddress,
   isHoneypotTriggered,
+  escapeHtml,
 } from '../src/utils/validation.js';
 import { assignRewards, getBenefitsByTier } from '../src/services/rewardsService.js';
 import { sendConfirmationEmail } from '../src/services/emailService.js';
 import { prisma } from '../src/database/prisma.js';
 
+// Configurações de Rate Limiting (MVP in-memory)
 const rateLimitStore = new Map();
-const RATE_LIMIT_WINDOW_MS = 3600000;
+const RATE_LIMIT_WINDOW_MS = 3600000; // 1 hora
 const RATE_LIMIT_MAX_REQUESTS = 5;
 
+/**
+ * Verifica rate limiting por IP hash
+ * @param {string} ipHash - Hash SHA256 do IP do cliente
+ * @returns {{ allowed: boolean }}
+ */
 function checkRateLimit(ipHash) {
   const now = Date.now();
   const timestamps = rateLimitStore.get(ipHash) || [];
@@ -30,6 +38,7 @@ function checkRateLimit(ipHash) {
   recentTimestamps.push(now);
   rateLimitStore.set(ipHash, recentTimestamps);
 
+  // Cleanup ocasional para evitar memory leak (1% de chance)
   if (Math.random() < 0.01) {
     for (const [key, values] of rateLimitStore.entries()) {
       const recent = values.filter((ts) => now - ts < RATE_LIMIT_WINDOW_MS);
@@ -41,20 +50,18 @@ function checkRateLimit(ipHash) {
   return { allowed: true };
 }
 
-// api/register.js - Função getClientIp CORRIGIDA
-
 /**
  * Extrai o IP do cliente de forma segura, considerando proxies (Vercel, Cloudflare, etc.)
- * Retorna hash SHA256 do IP para rate limiting (sem armazenar IP puro - LGPD)
+ * Retorna o IP bruto (não hash) para que a camada de rate‑limiting possa aplicar o hash separadamente.
  */
 function getClientIp(req) {
-  // Tenta obter IP de headers de proxy (ordem de prioridade)
+  // Tenta obter IP dos headers de proxy (ordem de prioridade)
   const forwarded = req.headers['x-forwarded-for'];
   const realIp = req.headers['x-real-ip'];
   const cfConnectingIp = req.headers['cf-connecting-ip'];
-  
+
   let ip = '';
-  
+
   if (forwarded) {
     // x-forwarded-for pode ter múltiplos IPs: "client, proxy1, proxy2"
     ip = forwarded.split(',')[0].trim();
@@ -66,15 +73,16 @@ function getClientIp(req) {
     // Fallback para conexão direta
     ip = req.socket?.remoteAddress || req.connection?.remoteAddress || 'unknown';
   }
-  
+
   // Remove prefixo IPv6 (::ffff:) se presente
-  ip = ip.replace('::ffff:', '');
-  
-  // Gera hash SHA256 para rate limiting (LGPD: não armazenar IP puro)
-  const crypto = require('crypto');
-  return crypto.createHash('sha256').update(ip).digest('hex');
+  return ip.replace('::ffff:', '');
 }
 
+/**
+ * Resposta de sucesso silenciosa para honeypot
+ * @param {import('http').ServerResponse} res
+ * @returns {import('http').ServerResponse}
+ */
 function fakeHoneypotSuccess(res) {
   const rewards = getBenefitsByTier('OBSERVER');
   return sendSuccess(
@@ -97,18 +105,28 @@ function fakeHoneypotSuccess(res) {
   );
 }
 
+/**
+ * HANDLER PRINCIPAL — Vercel Serverless Function
+ */
 export default async function handler(req, res) {
+  // Aplica CORS
   if (applyCORS(req, res)) return;
 
+  // Apenas POST é permitido
   if (req.method !== 'POST') {
     return sendError(res, 'Método não permitido.', 'METHOD_NOT_ALLOWED', 405);
   }
 
-  if (isHoneypotTriggered(req.body)) {
-    console.info('[register] Honeypot triggered');
+  // Body parsing: Vercel auto-parseia req.body para application/json
+  const body = req.body ?? {};
+
+  // 🤖 Honeypot
+  if (isHoneypotTriggered(body)) {
+    console.info('[register] Honeypot triggered — bot silently rejected');
     return fakeHoneypotSuccess(res);
   }
 
+  // 🔐 Rate Limiting
   const ipHash = hashIpAddress(getClientIp(req));
   const rateCheck = checkRateLimit(ipHash);
 
@@ -123,15 +141,16 @@ export default async function handler(req, res) {
     );
   }
 
-  const validation = validateRegisterPayload(req.body);
+  // Validação com Zod
+  const validation = validateRegisterPayload(body);
   if (!validation.success) {
     return sendError(res, validation.message, 'INVALID_PAYLOAD', 400, validation.details);
   }
 
-  const { fullName, email, phone, socialMedia, profession, consent, consentVersion } =
-    validation.data;
+  const { fullName, email, phone, socialMedia, profession, consent, consentVersion } = validation.data;
 
   try {
+    // Verifica email existente
     const existingUser = await prisma.betaUser.findUnique({
       where: { email },
       select: {
@@ -145,10 +164,9 @@ export default async function handler(req, res) {
 
     if (existingUser) {
       const rewards = getBenefitsByTier(existingUser.tier);
-      console.info('[register] Duplicate registration attempt');
-
+      console.info('[register] Duplicate registration');
       return sendSuccess(res, {
-        message: 'E-mail já registrado. Aqui estão seus dados de inscrição.',
+        message: 'E-mail já registrado.',
         data: {
           alreadyRegistered: true,
           position: existingUser.queuePosition,
@@ -163,10 +181,16 @@ export default async function handler(req, res) {
         },
       });
     }
+    
+        
+    // ✅ CALCULAR queuePosition MANUALMENTE (independente de sequência do banco)
+    const currentCount = await prisma.betaUser.count();
+    const queuePosition = currentCount + 1;
 
+    // Cria usuário COM queuePosition explícito
     const created = await prisma.betaUser.create({
       data: {
-        fullName,
+        fullName: escapeHtml(fullName),
         email,
         phone,
         socialMedia,
@@ -174,12 +198,13 @@ export default async function handler(req, res) {
         consent,
         consentVersion,
         consentDate: new Date(),
+        queuePosition, // ← Define explicitamente
       },
     });
 
-    const queuePosition = created.queuePosition;
     const rewards = assignRewards(queuePosition);
 
+    // Atualiza com tier/benefícios
     const newUser = await prisma.betaUser.update({
       where: { id: created.id },
       data: {
@@ -189,16 +214,18 @@ export default async function handler(req, res) {
       },
     });
 
-    console.info(`[register] New signup — tier ${rewards.tier}`);
+    console.info(`[register] New signup — #${queuePosition} — ${rewards.tier}`);
 
-    sendConfirmationEmail(newUser, queuePosition, rewards).catch(() => {
-      console.error('[register] Email dispatch error');
-    });
+    // Envia notificação interna (await seguro — nunca lança exceção)
+    const emailResult = await sendConfirmationEmail(newUser, queuePosition, rewards);
+    if (!emailResult.success) {
+      console.warn(`[register] Email skipped: ${emailResult.reason}`);
+    }
 
     return sendSuccess(
       res,
       {
-        message: 'Inscrição realizada com sucesso! Verifique seu e-mail.',
+        message: 'Inscrição realizada com sucesso!',
         data: {
           alreadyRegistered: false,
           position: queuePosition,
@@ -214,20 +241,20 @@ export default async function handler(req, res) {
       },
       201
     );
+
   } catch (err) {
     if (err.code === 'P2002') {
-      return sendError(
-        res,
-        'Este e-mail já foi registrado. Tente consultar seu status.',
-        'EMAIL_DUPLICATE',
-        409
-      );
+      return sendError(res, 'E-mail já registrado.', 'EMAIL_DUPLICATE', 409);
     }
 
-    console.error('[register] Internal error');
+    console.error('[register] Internal error:', {
+      code: err.code || 'UNKNOWN',
+      name: err.name || 'Error',
+    });
+
     return sendError(
       res,
-      'Erro ao processar inscrição. Tente novamente em instantes.',
+      'Erro ao processar inscrição. Tente novamente.',
       'INTERNAL_ERROR',
       500
     );
