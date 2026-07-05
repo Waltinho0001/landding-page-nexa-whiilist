@@ -5,11 +5,11 @@
 import { timingSafeEqual } from 'crypto';
 import { sendError } from '../../src/config/cors.js';
 
-const ADMIN_SECRET = process.env.ADMIN_SECRET;
 const MIN_SECRET_LENGTH = 32;
 
 export function isAdminSecretConfigured() {
-  return !!ADMIN_SECRET && ADMIN_SECRET.length >= MIN_SECRET_LENGTH;
+  const secret = process.env.ADMIN_SECRET;
+  return !!secret && secret.length >= MIN_SECRET_LENGTH;
 }
 
 function compareTokens(providedToken, expectedToken) {
@@ -50,7 +50,7 @@ export async function withAdminAuth(req, res, handler) {
     return sendError(res, 'Formato de autorização inválido.', 'INVALID_AUTH_FORMAT', 401);
   }
 
-  if (!compareTokens(parts[1], ADMIN_SECRET)) {
+  if (!compareTokens(parts[1], process.env.ADMIN_SECRET)) {
     console.warn('[admin/auth] Invalid token attempt');
     return sendError(res, 'Token de acesso inválido.', 'UNAUTHORIZED', 401);
   }

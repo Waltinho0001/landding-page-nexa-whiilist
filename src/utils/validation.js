@@ -28,9 +28,7 @@ export function sanitizeString(value) {
     .trim()
     .slice(0, 500)
     .replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F]/g, '')
-    .replace(/\s+/g, ' ')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
+    .replace(/\s+/g, ' ');
 }
 
 /**
@@ -134,6 +132,12 @@ export const registerSchema = z.object({
     .refine((val) => val === true, 'Você precisa aceitar os termos para se inscrever.'),
 
   consentVersion: z.string().default(process.env.CONSENT_VERSION || '1.0'),
+
+  lossExperience: z
+    .string({ required_error: 'Sua resposta é obrigatória.' })
+    .transform((val) => sanitizeString(val))
+    .refine((val) => val.length >= 15, 'Sua resposta é muito curta. Por favor, detalhe mais para nos ajudar a entender sua dor e se você tem o perfil do Beta.')
+    .refine((val) => val.length <= 2000, 'Sua resposta é muito longa.'),
 });
 
 export const statusQuerySchema = z.object({

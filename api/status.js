@@ -54,12 +54,16 @@ export default async function handler(req, res) {
     const rewards = getBenefitsByTier(user.tier);
     console.info('[status] Query completed — found');
 
+    const nameParts = user.fullName ? user.fullName.trim().split(/\s+/) : [''];
+    const initials = nameParts.length > 1 
+      ? (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase()
+      : nameParts[0].substring(0, 2).toUpperCase();
+
     return sendSuccess(res, {
       message: 'Consulta processada.',
       data: {
         found: true,
-        fullName: user.fullName,
-        email: user.email,
+        initials,
         position: user.queuePosition,
         tier: user.tier,
         registeredAt: user.createdAt,

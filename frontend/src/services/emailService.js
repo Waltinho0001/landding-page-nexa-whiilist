@@ -15,20 +15,26 @@ export const emailService = {
    * @returns {Promise<{ success: boolean, message: string, position?: number, tier?: string, benefits?: object, alreadyRegistered?: boolean }>}
    */
   async sendLeadEmail(data) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    
     try {
       const response = await fetch(`${API_BASE}/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
         body: JSON.stringify({
           fullName: data.fullName,
           email: data.email,
           phone: data.phone || undefined,
           socialMedia: data.socialMedia || undefined,
           profession: data.profession || undefined,
+          lossExperience: data.lossExperience,
           consent: data.consent ?? true,
           consentVersion: '1.0',
         }),
       });
+      clearTimeout(timeoutId);
 
       const result = await response.json();
 
@@ -66,12 +72,17 @@ export const emailService = {
    * @returns {Promise<{ success: boolean, data?: object, message?: string }>}
    */
   async getStatus(email) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    
     try {
       const encoded = encodeURIComponent(email.trim().toLowerCase());
       const response = await fetch(`${API_BASE}/status?email=${encoded}`, {
         method: 'GET',
         headers: { 'Accept': 'application/json' },
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
       const result = await response.json();
 

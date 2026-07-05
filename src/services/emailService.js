@@ -2,23 +2,39 @@
  * src/services/emailService.js
  * Envio via Resend com escapeHtml em todos os inputs do usuário.
  * Referência: SECURITY_AUDIT_CHECKLIST.md — XSS em templates de e-mail.
+ *
+ * SANDBOX MODE: No plano Free do Resend, e-mails só podem ser enviados
+ * para endereços verificados em Settings → Verified Emails.
+ * Por isso, esta versão envia APENAS para CORPORATE_EMAIL (notificação
+ * interna do founder), usando o domínio sandbox oficial (onboarding@resend.dev).
  */
 
 import { Resend } from 'resend';
 import { escapeHtml } from '../utils/validation.js';
 
+// ─── Resend Client Singleton ────────────────────────────────────────────────
+
 let resendClient = null;
 
+/**
+ * Retorna o Resend client singleton.
+ * @returns {{ client: Resend | null, error: string | null }}
+ */
 function getResendClient() {
-  if (!resendClient) {
-    const apiKey = process.env.RESEND_API_KEY;
-    if (!apiKey) {
-      throw new Error('[emailService] RESEND_API_KEY não configurada');
-    }
-    resendClient = new Resend(apiKey);
+  if (resendClient) {
+    return { client: resendClient, error: null };
   }
-  return resendClient;
+
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    return { client: null, error: 'RESEND_API_KEY não configurada' };
+  }
+
+  resendClient = new Resend(apiKey);
+  return { client: resendClient, error: null };
 }
+
+// ─── Helpers de Formatação ──────────────────────────────────────────────────
 
 function getBRTTimestamp() {
   return new Date().toLocaleString('pt-BR', {
@@ -60,6 +76,8 @@ function buildPerkRow(perk) {
       </td>
     </tr>`;
 }
+
+// ─── Templates de E-mail ────────────────────────────────────────────────────
 
 function buildConfirmationEmail(user, position, rewards) {
   const timestamp = getBRTTimestamp();
@@ -158,6 +176,7 @@ function buildInternalNotificationEmail(user, position, rewards) {
         ${user.phone ? buildDataRow('Telefone', user.phone) : ''}
         ${user.socialMedia ? buildDataRow('Rede Social', user.socialMedia) : ''}
         ${user.profession ? buildDataRow('Perfil', user.profession) : ''}
+        ${user.lossExperience ? buildDataRow('Prejuízo (Filtro)', user.lossExperience) : ''}
       </table>
       <p style="font-size:11px;color:#94a3b8;margin-top:12px;">${escapeHtml(timestamp)} (BRT)</p>
     </td></tr>
@@ -166,68 +185,91 @@ function buildInternalNotificationEmail(user, position, rewards) {
 </html>`;
 }
 
+// ─── Função Principal ───────────────────────────────────────────────────────
+
 /**
- * @param {object} user
- * @param {number} position
- * @param {object} rewards
+ * Envia notificação interna ao founder sobre novo registro.
+ *
+ * MODO SANDBOX (Resend Free):
+ * - Remetente: onboarding@resend.dev (domínio sandbox oficial do Resend)
+ * - Destinatário: APENAS process.env.CORPORATE_EMAIL (deve estar verificado
+ *   em https://resend.com/settings/emails)
+ * - NÃO envia para user.email (destinatário não verificado = rejeitado pelo Resend)
+ *
+ * Quando o projeto migrar para domínio verificado (ex: mail.nexa.app):
+ * - Alterar `from` para o domínio próprio
+ * - Adicionar envio para user.email (buildConfirmationEmail)
+ *
+ * @param {object} user       — Registro do banco (fullName, email, phone, etc.)
+ * @param {number} position   — Posição na fila
+ * @param {object} rewards    — Tier/benefícios calculados
+ * @returns {Promise<{ success: boolean, reason: string, messageId?: string }>}
  */
 export async function sendConfirmationEmail(user, position, rewards) {
   const corporateEmail = process.env.CORPORATE_EMAIL;
-  const fromAddress = process.env.RESEND_FROM || 'Nexa App <onboarding@resend.dev>';
 
-  let resend;
-  try {
-    resend = getResendClient();
-  } catch (err) {
-    console.error('[emailService] Config error');
-    return;
+  // ── Validação 1: CORPORATE_EMAIL deve existir ─────────────────────────
+  if (!corporateEmail) {
+    console.warn('[emailService] CORPORATE_EMAIL não configurada — e-mail ignorado');
+    return {
+      success: false,
+      reason: 'CORPORATE_EMAIL não configurada',
+    };
   }
 
+  // ── Validação 2: Resend client deve inicializar ───────────────────────
+  const { client: resend, error: clientError } = getResendClient();
+  if (!resend) {
+    console.error(`[emailService] Config error: ${clientError}`);
+    return {
+      success: false,
+      reason: clientError,
+    };
+  }
+
+  // ── Montar e enviar notificação interna ────────────────────────────────
   const tierEmoji = getTierEmoji(rewards.tier);
-  const emailPromises = [];
 
-  emailPromises.push(
-    resend.emails
-      .send({
-        from: fromAddress,
-        to: [user.email],
-        replyTo: corporateEmail || undefined,
-        subject: `${tierEmoji} Você está na lista! Posição #${position} — Nexa Beta`,
-        html: buildConfirmationEmail(user, position, rewards),
-      })
-      .then((result) => {
-        if (result.error) {
-          console.error('[emailService] User email failed');
-        } else {
-          console.info('[emailService] Confirmation email dispatched');
-        }
-      })
-      .catch(() => {
-        console.error('[emailService] User email exception');
-      })
-  );
+  try {
+    const result = await resend.emails.send({
+      from: 'Nexa Beta <onboarding@resend.dev>',
+      to: [corporateEmail],
+      subject: `${tierEmoji} [Nexa] Novo ${rewards.tier} — #${position} — ${escapeHtml(user.fullName)}`,
+      html: buildInternalNotificationEmail(user, position, rewards),
+    });
 
-  if (corporateEmail) {
-    emailPromises.push(
-      resend.emails
-        .send({
-          from: fromAddress,
-          to: [corporateEmail],
-          subject: `[Nexa] Novo ${rewards.tier} — posição #${position}`,
-          html: buildInternalNotificationEmail(user, position, rewards),
-        })
-        .then((result) => {
-          if (result.error) {
-            console.error('[emailService] Internal notification failed');
-          } else {
-            console.info('[emailService] Internal notification dispatched');
-          }
-        })
-        .catch(() => {
-          console.error('[emailService] Internal notification exception');
-        })
-    );
+    // Resend v3+ retorna { data, error }
+    if (result.error) {
+      console.error('[emailService] Resend API rejected:', {
+        statusCode: result.error.statusCode ?? 'N/A',
+        name: result.error.name ?? 'UnknownError',
+        message: result.error.message ?? 'Sem detalhes',
+      });
+      return {
+        success: false,
+        reason: `Resend API error: ${result.error.name ?? 'unknown'}`,
+      };
+    }
+
+    const messageId = result.data?.id ?? 'unknown';
+    console.info(`[emailService] Internal notification sent — messageId: ${messageId}`);
+
+    return {
+      success: true,
+      reason: 'Internal notification dispatched',
+      messageId,
+    };
+  } catch (err) {
+    // Erros de rede, timeout, SDK crash — nunca deve quebrar o registro
+    console.error('[emailService] Unexpected exception:', {
+      name: err.name ?? 'Error',
+      message: err.message ?? 'Sem detalhes',
+      // NÃO logar stack completo nem env vars em produção
+    });
+
+    return {
+      success: false,
+      reason: `Exception: ${err.message ?? 'unknown'}`,
+    };
   }
-
-  await Promise.allSettled(emailPromises);
 }

@@ -18,6 +18,8 @@ model BetaUser {
   socialMedia     String?
   profession      String?
   consent         Boolean  @default(false)
+  lossExperience  String   @default("")
+
 
   // Fila e recompensas
   queuePosition   Int      @unique  // ← REMOVIDO: @default(autoincrement())

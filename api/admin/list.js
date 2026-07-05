@@ -46,6 +46,7 @@ export default async function handler(req, res) {
             consentVersion: true,
             consentDate: true,
             createdAt: true,
+            lossExperience: true,
           },
         }),
         prisma.betaUser.count({ where: whereClause }),

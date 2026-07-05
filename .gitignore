@@ -1,85 +1,12 @@
-```
-# Environment variables
-.env.local
-*.env.*
-
-# Dependencies
 node_modules/
-
-# Build artifacts
+.env
+.env.local
+.env.*
 dist/
-build/
-target/
-
-# Python cache
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-
-# Logs
-*.log
-
-# Temporary files
-*.tmp
-*.temp
-
-# OS generated files
-.DS_Store
-Thumbs.db
-
-# IDE files
+.vercel/
 .vscode/
 .idea/
-*.swp
-*.swo
+.DS_Store
 
-# Coverage reports
-coverage/
-htmlcov/
-.coverage
-
-# Package manager caches
-.npm/
-.yarn/
-.pnpm-store/
-.bazel-cache/
-
-# Virtual environments
-venv/
-.venv/
-env/
-.ENV/
-
-# Gradle
-.gradle/
-build/
-
-# Maven
-target/
-
-# Compressed files
-*.zip
-*.gz
-*.tar
-*.tgz
-*.bz2
-*.xz
-*.7z
-*.rar
-*.zst
-*.lz4
-*.lzh
-*.cab
-*.arj
-*.rpm
-*.deb
-*.Z
-*.lz
-*.lzo
-*.tar.gz
-*.tar.bz2
-*.tar.xz
-*.tar.zst
-```
 .vercel
+.env*

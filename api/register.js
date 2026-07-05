@@ -147,7 +147,7 @@ export default async function handler(req, res) {
     return sendError(res, validation.message, 'INVALID_PAYLOAD', 400, validation.details);
   }
 
-  const { fullName, email, phone, socialMedia, profession, consent, consentVersion } = validation.data;
+  const { fullName, email, phone, socialMedia, profession, consent, consentVersion, lossExperience } = validation.data;
 
   try {
     // Verifica email existente
@@ -183,24 +183,44 @@ export default async function handler(req, res) {
     }
     
         
-    // ✅ CALCULAR queuePosition MANUALMENTE (independente de sequência do banco)
-    const currentCount = await prisma.betaUser.count();
-    const queuePosition = currentCount + 1;
+    // ✅ CALCULAR queuePosition MANUALMENTE COM RETRY PARA EVITAR RACE CONDITION
+    let created;
+    let queuePosition;
+    let retryCount = 0;
+    const MAX_RETRIES = 5;
 
-    // Cria usuário COM queuePosition explícito
-    const created = await prisma.betaUser.create({
-      data: {
-        fullName: escapeHtml(fullName),
-        email,
-        phone,
-        socialMedia,
-        profession,
-        consent,
-        consentVersion,
-        consentDate: new Date(),
-        queuePosition, // ← Define explicitamente
-      },
-    });
+    while (retryCount < MAX_RETRIES) {
+      try {
+        const currentCount = await prisma.betaUser.count();
+        queuePosition = currentCount + 1;
+
+        created = await prisma.betaUser.create({
+          data: {
+            fullName: escapeHtml(fullName),
+            email,
+            phone,
+            socialMedia,
+            profession,
+            consent,
+            consentVersion,
+            consentDate: new Date(),
+            queuePosition, // ← Define explicitamente
+            lossExperience: escapeHtml(lossExperience),
+          },
+        });
+        break; // Sucesso, sai do loop
+      } catch (err) {
+        // Se for erro de unicidade no queuePosition, tenta novamente
+        if (err.code === 'P2002' && (err.meta?.target?.includes('queuePosition') || err.meta?.target === 'queuePosition' || err.meta?.target === 'beta_users_queuePosition_key')) {
+          retryCount++;
+          if (retryCount >= MAX_RETRIES) throw err;
+          // Pequeno delay aleatório para desempate
+          await new Promise((resolve) => setTimeout(resolve, Math.random() * 50));
+          continue;
+        }
+        throw err; // Outros erros (ex: email duplicado) sobem para o catch externo
+      }
+    }
 
     const rewards = assignRewards(queuePosition);
 

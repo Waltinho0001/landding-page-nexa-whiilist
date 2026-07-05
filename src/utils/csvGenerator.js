@@ -58,6 +58,7 @@ export function generateBetaUsersCSV(users) {
     'premiumMonths',
     'lifetimeDiscount',
     'createdAt',
+    'lossExperience',
   ];
 
   const formattedData = users.map((user) => ({
@@ -74,6 +75,7 @@ export function generateBetaUsersCSV(users) {
       user.createdAt instanceof Date
         ? user.createdAt.toISOString()
         : String(user.createdAt),
+    lossExperience: user.lossExperience || '',
   }));
 
   return arrayToCSV(formattedData, headers);

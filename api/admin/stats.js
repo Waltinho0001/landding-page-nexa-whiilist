@@ -1,12 +1,12 @@
 /**
  * api/admin/stats.js — GET /api/admin/stats
+ * Returns aggregate statistics for beta users.
+ * Uses shared CORS, auth, and response helpers for consistency.
  */
 
 import { applyCORS, sendSuccess, sendError } from '../../src/config/cors.js';
 import { withAdminAuth } from './auth.js';
 import { prisma } from '../../src/database/prisma.js';
-
-const ALL_TIERS = ['ELITE', 'FOUNDER', 'OBSERVER'];
 
 export default async function handler(req, res) {
   if (applyCORS(req, res)) return;
@@ -19,20 +19,21 @@ export default async function handler(req, res) {
     try {
       const total = await prisma.betaUser.count();
 
+      // Distribution by tier (ensure known tiers are present)
+      const ALL_TIERS = ['ELITE', 'FOUNDER', 'OBSERVER'];
       const tierCounts = await prisma.betaUser.groupBy({
         by: ['tier'],
-        _count: { id: true },
+        _count: { _all: true },
       });
-
       const distributionByTier = ALL_TIERS.reduce((acc, tier) => {
         acc[tier] = 0;
         return acc;
       }, {});
-
       tierCounts.forEach((item) => {
-        distributionByTier[item.tier] = item._count.id;
+        distributionByTier[item.tier] = item._count._all;
       });
 
+      // Recent sign-ups (last 5)
       const recentSignups = await prisma.betaUser.findMany({
         take: 5,
         orderBy: { createdAt: 'desc' },

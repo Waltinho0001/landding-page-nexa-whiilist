@@ -29,6 +29,7 @@ export default async function handler(req, res) {
           premiumMonths: true,
           lifetimeDiscount: true,
           createdAt: true,
+          lossExperience: true,
         },
       });
 

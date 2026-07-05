@@ -89,7 +89,7 @@ export default function Navbar({ onNavigate }) {
               onClick={() => handleNavClick('principal-waitlist-box')}
               className="min-h-[44px] inline-flex items-center bg-slate-900 hover:bg-slate-800 focus:bg-slate-800 text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow-xs transition-transform motion-safe:hover:scale-105 motion-safe:active:scale-95 cursor-pointer focus:outline-none focus:ring-2 focus:ring-slate-900/40"
             >
-              Entrar na Lista
+              Candidatar-se (50 Vagas)
             </button>
           </div>
 
@@ -143,7 +143,7 @@ export default function Navbar({ onNavigate }) {
                 onClick={() => handleNavClick('principal-waitlist-box')}
                 className="w-full min-h-[44px] flex items-center justify-center mt-2 bg-gradient-to-r from-nexa-blue-dark to-nexa-blue text-white text-sm font-bold rounded-xl shadow-md focus:outline-none focus:ring-2 focus:ring-nexa-blue/40 cursor-pointer"
               >
-                Garantir Acesso Antecipado
+                Candidatar-se (50 Vagas)
               </button>
             </div>
           </div>

@@ -5,9 +5,9 @@
  */
 
 const ALLOWED_ORIGINS = [
-  process.env.DOMAIN,
-  process.env.FRONTEND_URL,
-  process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
+  process.env.DOMAIN?.replace(/\/$/, ''),
+  process.env.FRONTEND_URL?.replace(/\/$/, ''),
+  process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL.replace(/\/$/, '')}` : null,
   'http://localhost:3000',
   'http://localhost:5173',
   'http://localhost:3001',

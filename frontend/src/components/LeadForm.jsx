@@ -23,6 +23,7 @@ export default function LeadForm({ onSuccess, savedLead, queuePosition, tier, be
     phone: '',
     socialMedia: '',
     profession: '',
+    lossExperience: '',
     consent: false,
     // Honeypot field (oculto, deve permanecer vazio)
     website: '',
@@ -123,6 +124,11 @@ export default function LeadForm({ onSuccess, savedLead, queuePosition, tier, be
       tempErrors.profession = 'Selecione seu perfil profissional.';
     }
 
+    // Validação da Fricção Qualificadora (Prejuízo)
+    if (!formData.lossExperience || formData.lossExperience.trim().length < 15) {
+      tempErrors.lossExperience = 'Sua resposta é muito curta. Por favor, detalhe mais para nos ajudar a entender sua dor e se você tem o perfil do Beta.';
+    }
+
     // Validação de consentimento
     if (!formData.consent) {
       tempErrors.consent = 'Você precisa aceitar receber as atualizações.';
@@ -170,6 +176,7 @@ export default function LeadForm({ onSuccess, savedLead, queuePosition, tier, be
         phone: formData.phone.trim(),
         socialMedia: formData.socialMedia,
         profession: formData.profession,
+        lossExperience: formData.lossExperience.trim(),
         consent: formData.consent,
       });
 
@@ -245,10 +252,10 @@ export default function LeadForm({ onSuccess, savedLead, queuePosition, tier, be
       <div className="absolute top-0 right-0 w-24 h-24 bg-nexa-blue/5 rounded-full blur-2xl pointer-events-none" />
       <div className="mb-6">
         <h3 className="font-display font-bold text-2xl text-slate-800 tracking-tight">
-          Garanta seu acesso antecipado
+          Candidatar-se para o Beta
         </h3>
-        <p className="text-slate-500 text-sm mt-1">
-          Preencha os campos abaixo e faça parte do fechado grupo de fundadores de rotina.
+        <p className="text-slate-500 text-sm mt-1 font-medium text-amber-600">
+          Atenção: Estamos aceitando apenas 50 usuários para este primeiro Beta Fechado. Buscamos pessoas que realmente sofrem com a falta de constância.
         </p>
       </div>
 
@@ -435,6 +442,39 @@ export default function LeadForm({ onSuccess, savedLead, queuePosition, tier, be
           )}
         </div>
 
+        <div>
+          <label htmlFor="lossExperience" className="text-xs font-semibold text-slate-700 mb-1.5 flex flex-col gap-1">
+            <span className="flex items-center gap-1">
+              <AlertCircle className="w-3.5 h-3.5 text-amber-500" />
+              Pergunta Obrigatória para Seleção do Beta
+            </span>
+            <span className="font-normal text-slate-500">Qual foi o maior prejuízo (financeiro, acadêmico ou emocional) que a procrastinação e a falta de constância causaram na sua vida nos últimos 6 meses?</span>
+          </label>
+          <textarea
+            id="lossExperience"
+            name="lossExperience"
+            required
+            aria-required="true"
+            aria-invalid={!!errors.lossExperience}
+            aria-describedby={errors.lossExperience ? 'lossExperience-error' : undefined}
+            value={formData.lossExperience}
+            onChange={handleChange}
+            placeholder="Seja sincero. Ex: Reprovei no TCC, perdi um cliente importante..."
+            disabled={isSubmitting}
+            className={`w-full min-h-[80px] px-4 py-3 bg-slate-50 border rounded-xl text-sm transition-all focus:outline-none focus:bg-white focus:ring-2 disabled:opacity-50 resize-y ${
+              errors.lossExperience
+                ? 'border-red-400 focus:ring-red-100 placeholder:text-red-300'
+                : 'border-slate-200 focus:ring-nexa-blue/10 focus:border-nexa-blue'
+            }`}
+          />
+          {errors.lossExperience && (
+            <div id="lossExperience-error" className="flex items-center gap-1 mt-1 text-red-500 text-xs">
+              <AlertCircle className="w-3.5 h-3.5" />
+              <span>{errors.lossExperience}</span>
+            </div>
+          )}
+        </div>
+
         <div className="space-y-1">
           <label className="relative flex items-start gap-3 cursor-pointer min-h-[44px] py-1">
             <input
@@ -468,7 +508,7 @@ export default function LeadForm({ onSuccess, savedLead, queuePosition, tier, be
           </>
         ) : (
           <>
-            Entrar na Lista
+            Candidatar-se para as 50 Vagas do Beta
             <Send className="w-4 h-4" />
           </>
         )}
